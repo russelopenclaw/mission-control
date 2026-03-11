@@ -109,7 +109,8 @@ function TaskCard({ task, onMoveTask, onTaskClick, allColumns }: TaskCardProps) 
     }
   };
 
-  const getAssigneeBadge = (assignee: string) => {
+  const getAssigneeBadge = (assignee: string | null | undefined) => {
+    if (!assignee || typeof assignee !== 'string') return 'bg-[#71717a]';
     switch (assignee.toLowerCase()) {
       case 'kevin': return 'bg-[#5e6ad2]';
       case 'alfred': return 'bg-[#22c55e]';

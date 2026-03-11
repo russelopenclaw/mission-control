@@ -42,7 +42,13 @@ export async function authMiddleware(request: NextRequest) {
     pathname === '/api/status' ||
     pathname.startsWith('/api/status/') ||
     pathname === '/api/subagents' ||
-    pathname.startsWith('/api/subagents/')
+    pathname.startsWith('/api/subagents/') ||
+    pathname === '/agents' ||
+    pathname.startsWith('/agents/') ||
+    pathname === '/api/agents' ||
+    pathname.startsWith('/api/agents/') ||
+    pathname === '/tasks' ||
+    pathname.startsWith('/tasks/')
   ) {
     return NextResponse.next();
   }

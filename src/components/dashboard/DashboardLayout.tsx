@@ -15,6 +15,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const navItems = [
     { href: '/', label: 'Home', icon: '🏠' },
     { href: '/tasks', label: 'Tasks', icon: '📋' },
+    { href: '/agents', label: 'Agents', icon: '🤖' },
     { href: '/brain', label: 'Brain', icon: '🧠' },
     { href: '/memory', label: 'Memory', icon: '💭' },
     { href: '/calendar', label: 'Calendar', icon: '📅' },
