@@ -1,203 +1,147 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { promises as fs } from 'fs';
-import path from 'path';
-
-const KANBAN_PATH = path.resolve(process.cwd(), '../kanban/tasks.json');
-
-// Read tasks from file
-async function readTasks() {
-  try {
-    const content = await fs.readFile(KANBAN_PATH, 'utf-8');
-    return JSON.parse(content);
-  } catch (error) {
-    // File doesn't exist or is invalid, return default structure
-    return { tasks: [], agents: {} };
-  }
-}
-
-// Write tasks to file
-async function writeTasks(data: any) {
-  await fs.writeFile(KANBAN_PATH, JSON.stringify(data, null, 2), 'utf-8');
-}
+import { query } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const column = searchParams.get('column');
-  
-  const data = await readTasks();
-  let tasks = data.tasks || [];
-  
-  // Filter by column if specified (backward compatible)
-  if (column) {
-    tasks = tasks.filter((t: any) => t.column === column);
+  try {
+    const { searchParams } = new URL(request.url);
+    const column = searchParams.get('column');
+    const limit = searchParams.get('limit');
+    
+    let sql = 'SELECT * FROM tasks';
+    const params: any[] = [];
+    
+    if (column) {
+      params.push(column);
+      sql += ' WHERE column_name = $1';
+    }
+    
+    sql += ' ORDER BY created_at DESC';
+    
+    if (limit) {
+      params.push(parseInt(limit));
+      sql += ' LIMIT $' + params.length;
+    }
+    
+    const result = await query(sql, params);
+    
+    // Get agents
+    const agentsResult = await query('SELECT * FROM agents');
+    
+    // Transform rows to match old JSON structure
+    const tasks = result.rows.map(row => ({
+      id: row.id,
+      title: row.title,
+      column: row.column_name,  // Map back to 'column' for frontend compatibility
+      assignee: row.assignee,
+      priority: row.priority,
+      description: row.description,
+      createdAt: row.created_at,
+      startedAt: row.started_at,
+      completedAt: row.completed_at,
+      linkedSubagent: row.linked_subagent,
+    }));
+    
+    const agents: any = {};
+    for (const agent of agentsResult.rows) {
+      agents[agent.name] = {
+        status: agent.status,
+        currentTask: agent.current_task,
+        lastActivity: agent.last_activity,
+      };
+    }
+    
+    return NextResponse.json({ tasks, agents });
+    
+  } catch (error) {
+    console.error('[API /tasks] Error:', error);
+    return NextResponse.json(
+      { error: 'Database error', details: (error as Error).message },
+      { status: 500 }
+    );
   }
-  
-  return NextResponse.json({ 
-    tasks,
-    agents: data.agents || {}
-  });
 }
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const data = await readTasks();
     
-    const newTask: any = {
-      id: `task-${Date.now()}`,
-      title: body.title,
-      column: body.column || 'backlog',
-      assignee: body.assignee || 'alfred',
-      priority: body.priority || 'medium',
-      createdAt: new Date().toISOString(),
-      description: body.description || undefined
-    };
+    const result = await query(
+      `INSERT INTO tasks (
+        id, title, column_name, assignee, priority, description,
+        linked_subagent, created_at, started_at, updated_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+      RETURNING *`,
+      [
+        body.id || `task-${Date.now()}`,
+        body.title,
+        body.column || 'backlog',
+        body.assignee || 'alfred',
+        body.priority || 'medium',
+        body.description || null,
+        body.linkedSubagent || null,
+        new Date().toISOString(),
+        body.startedAt || null,
+      ]
+    );
     
-    // Add subtask tracking if parent task specified
-    if (body.parentTaskId) {
-      newTask.parentTaskId = body.parentTaskId;
-      
-      // Add to parent's subtasks array
-      const parentIndex = (data.tasks || []).findIndex((t: any) => t.id === body.parentTaskId);
-      if (parentIndex !== -1) {
-        if (!data.tasks[parentIndex].subtasks) {
-          data.tasks[parentIndex].subtasks = [];
-        }
-        data.tasks[parentIndex].subtasks.push(newTask.id);
-      }
-    }
+    return NextResponse.json({ task: result.rows[0], success: true });
     
-    // Track agent assignment
-    if (body.assignee) {
-      newTask.assignedAt = new Date().toISOString();
-    }
-    
-    // Initialize task history
-    newTask.history = [
-      {
-        status: 'backlog',
-        timestamp: new Date().toISOString(),
-        note: 'Task created'
-      }
-    ];
-    
-    if (!data.tasks) data.tasks = [];
-    data.tasks.push(newTask);
-    
-    await writeTasks(data);
-    
-    return NextResponse.json({ success: true, task: newTask });
   } catch (error) {
-    console.error('Failed to create task:', error);
+    console.error('[API /tasks POST] Error:', error);
     return NextResponse.json(
-      { error: 'Failed to create task' },
+      { error: 'Database error', details: (error as Error).message },
       { status: 500 }
     );
   }
 }
 
-export async function PUT(request: NextRequest) {
+export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json();
-    const data = await readTasks();
-    
-    if (!data.tasks) {
-      return NextResponse.json(
-        { error: 'No tasks found' },
-        { status: 404 }
-      );
-    }
-    
-    const taskIndex = data.tasks.findIndex((t: any) => t.id === body.id);
-    
-    if (taskIndex === -1) {
-      return NextResponse.json(
-        { error: 'Task not found' },
-        { status: 404 }
-      );
-    }
-    
-    const task = data.tasks[taskIndex];
-    let statusChanged = false;
-    
-    // Update the task
-    if (body.column && body.column !== task.column) {
-      task.column = body.column;
-      statusChanged = true;
-      
-      // Add to history
-      if (!task.history) task.history = [];
-      task.history.push({
-        status: body.column,
-        timestamp: new Date().toISOString(),
-        note: body.note || `Status changed to ${body.column}`
-      });
-    }
-    
-    if (body.title) task.title = body.title;
-    if (body.priority) task.priority = body.priority;
-    if (body.assignee && body.assignee !== task.assignee) {
-      task.assignee = body.assignee;
-      task.assignedAt = new Date().toISOString();
-      if (!task.history) task.history = [];
-      task.history.push({
-        status: task.column,
-        timestamp: new Date().toISOString(),
-        note: `Assigned to ${body.assignee}`
-      });
-    }
-    if (body.description !== undefined) task.description = body.description;
-    if (body.subtasks) task.subtasks = body.subtasks;
-    
-    // Link subagent to task if provided
-    if (body.subagentRunId) {
-      task.subagentRunId = body.subagentRunId;
-      if (!task.history) task.history = [];
-      task.history.push({
-        status: task.column,
-        timestamp: new Date().toISOString(),
-        note: `Linked to subagent ${body.subagentRunId}`
-      });
-    }
-    
-    await writeTasks(data);
-    
-    return NextResponse.json({ success: true, task: data.tasks[taskIndex] });
-  } catch (error) {
-    console.error('Failed to update task:', error);
-    return NextResponse.json(
-      { error: 'Failed to update task' },
-      { status: 500 }
-    );
-  }
-}
-
-export async function DELETE(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
+    const { id, ...updates } = body;
     
     if (!id) {
-      return NextResponse.json(
-        { error: 'Task ID required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Task ID required' }, { status: 400 });
     }
     
-    const data = await readTasks();
+    // Build dynamic update query
+    const setClauses: string[] = [];
+    const values: any[] = [];
+    let paramIndex = 1;
     
-    if (!data.tasks) {
-      return NextResponse.json({ success: true });
+    // Map frontend field names to database column names
+    const fieldMap: Record<string, string> = {
+      column: 'column_name',
+      currentTask: 'current_task',  // for agents
+      lastActivity: 'last_activity',
+      startedAt: 'started_at',
+      completedAt: 'completed_at',
+      linkedSubagent: 'linked_subagent',
+    };
+    
+    for (const [field, value] of Object.entries(updates)) {
+      const dbField = fieldMap[field] || field;
+      setClauses.push(`${dbField} = $${paramIndex}`);
+      values.push(value);
+      paramIndex++;
     }
     
-    data.tasks = data.tasks.filter((t: any) => t.id !== id);
-    await writeTasks(data);
+    setClauses.push(`updated_at = NOW()`);
+    values.push(id);
     
-    return NextResponse.json({ success: true });
+    const sql = `UPDATE tasks SET ${setClauses.join(', ')} WHERE id = $${paramIndex} RETURNING *`;
+    const result = await query(sql, values);
+    
+    if (result.rows.length === 0) {
+      return NextResponse.json({ error: 'Task not found' }, { status: 404 });
+    }
+    
+    return NextResponse.json({ task: result.rows[0], success: true });
+    
   } catch (error) {
-    console.error('Failed to delete task:', error);
+    console.error('[API /tasks PATCH] Error:', error);
     return NextResponse.json(
-      { error: 'Failed to delete task' },
+      { error: 'Database error', details: (error as Error).message },
       { status: 500 }
     );
   }

@@ -16,7 +16,8 @@ export const config = {
      * - API routes for docs (public access)
      * - API routes for calendar (public access)
      * - API routes for brain (public access)
+     * - API routes for subagents (public access)
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$|api/docs/|api/calendar/|api/brain/).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$|api/docs/|api/calendar/|api/brain/|api/subagents/).*)',
   ],
 };

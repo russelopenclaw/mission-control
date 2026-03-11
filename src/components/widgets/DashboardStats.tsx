@@ -85,25 +85,25 @@ export default function DashboardStats() {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-5 gap-3 mb-4">
-      <div className="bg-[#151518] border border-[#27272a] rounded-md p-4">
-        <div className="text-2xl font-semibold text-white">{stats.activeAgents}</div>
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 mb-4 stats-grid">
+      <div className="bg-[#151518] border border-[#27272a] rounded-md p-3 sm:p-4">
+        <div className="text-2xl sm:text-3xl font-semibold text-white">{stats.activeAgents}</div>
         <div className="text-xs text-[#888888] mt-1">Active Agents</div>
       </div>
-      <div className="bg-[#151518] border border-[#27272a] rounded-md p-4">
-        <div className="text-2xl font-semibold text-white">{stats.activeSubagents}</div>
+      <div className="bg-[#151518] border border-[#27272a] rounded-md p-3 sm:p-4">
+        <div className="text-2xl sm:text-3xl font-semibold text-white">{stats.activeSubagents}</div>
         <div className="text-xs text-[#888888] mt-1">Active Subagents</div>
       </div>
-      <div className="bg-[#151518] border border-[#27272a] rounded-md p-4">
-        <div className="text-2xl font-semibold text-white">{stats.tasksToday}</div>
+      <div className="bg-[#151518] border border-[#27272a] rounded-md p-3 sm:p-4">
+        <div className="text-2xl sm:text-3xl font-semibold text-white">{stats.tasksToday}</div>
         <div className="text-xs text-[#888888] mt-1">Tasks Today</div>
       </div>
-      <div className="bg-[#151518] border border-[#27272a] rounded-md p-4">
-        <div className="text-2xl font-semibold text-white">{stats.inProgressTasks}</div>
+      <div className="bg-[#151518] border border-[#27272a] rounded-md p-3 sm:p-4">
+        <div className="text-2xl sm:text-3xl font-semibold text-white">{stats.inProgressTasks}</div>
         <div className="text-xs text-[#888888] mt-1">In Progress</div>
       </div>
-      <div className="bg-[#151518] border border-[#27272a] rounded-md p-4">
-        <div className="text-2xl font-semibold text-white">{stats.urgentItems}</div>
+      <div className="bg-[#151518] border border-[#27272a] rounded-md p-3 sm:p-4">
+        <div className="text-2xl sm:text-3xl font-semibold text-white">{stats.urgentItems}</div>
         <div className="text-xs text-[#888888] mt-1">Urgent Items</div>
       </div>
     </div>

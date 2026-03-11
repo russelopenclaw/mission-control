@@ -20,7 +20,7 @@ export async function getSession(request: NextRequest) {
   }
 }
 
-export async function createSession(username: string) {
+export async function createSession(username: string, options?: { secure?: boolean }) {
   const token = await new SignJWT({ username, authenticated: true })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
@@ -40,7 +40,9 @@ export async function authMiddleware(request: NextRequest) {
     pathname.startsWith('/api/auth') ||
     pathname === '/api/tasks' ||
     pathname === '/api/status' ||
-    pathname.startsWith('/api/status/')
+    pathname.startsWith('/api/status/') ||
+    pathname === '/api/subagents' ||
+    pathname.startsWith('/api/subagents/')
   ) {
     return NextResponse.next();
   }

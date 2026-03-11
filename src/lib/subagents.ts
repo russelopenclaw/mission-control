@@ -1,13 +1,17 @@
 /**
- * Subagent Monitoring Utilities
+ * Subagent Monitoring Utilities - PostgreSQL Edition
  * Helpers for tracking and monitoring subagent activity
  */
 
-import { promises as fs } from 'fs';
-import path from 'path';
-import { calculateRuntime } from './agent-status';
+import { Pool } from 'pg';
 
-const SUBAGENTS_PATH = path.resolve(process.cwd(), '../kanban/subagents.json');
+const POOL_CONFIG = {
+  host: 'localhost',
+  port: 5432,
+  database: 'mission_control',
+  user: 'alfred',
+  password: process.env.DB_PASSWORD || 'AlfredDB2026Secure'
+};
 
 export interface SubagentStatus {
   runId: string;
@@ -17,38 +21,73 @@ export interface SubagentStatus {
   runtime: string;
   totalTokens: number;
   startedAt: string;
-  lastUpdated?: string;
   completedAt?: string;
 }
 
-export interface SubagentsData {
-  active: SubagentStatus[];
-  recent: SubagentStatus[];
+function calculateRuntime(startedAt: string): string {
+  const start = new Date(startedAt);
+  const now = new Date();
+  const diffMs = now.getTime() - start.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  
+  if (diffMins < 60) {
+    return `${diffMins}m`;
+  }
+  
+  const diffHours = Math.floor(diffMins / 60);
+  const remainingMins = diffMins % 60;
+  
+  if (diffHours < 24) {
+    return `${diffHours}h ${remainingMins}m`;
+  }
+  
+  const diffDays = Math.floor(diffHours / 24);
+  const remainingHours = diffHours % 24;
+  
+  return `${diffDays}d ${remainingHours}h ${remainingMins}m`;
 }
 
 /**
- * Get all subagents with calculated runtime
+ * Get all subagents from PostgreSQL
  */
-export async function getAllSubagents(): Promise<SubagentsData> {
+export async function getAllSubagents(): Promise<{ active: SubagentStatus[]; recent: SubagentStatus[] }> {
+  const pool = new Pool(POOL_CONFIG);
+  
   try {
-    const content = await fs.readFile(SUBAGENTS_PATH, 'utf-8');
-    const data = JSON.parse(content);
-
-    // Calculate runtime for all subagents
-    const active = (data.active || []).map((subagent: any) => ({
-      ...subagent,
-      runtime: calculateRuntime(subagent.startedAt)
-    }));
-
-    const recent = (data.recent || []).map((subagent: any) => ({
-      ...subagent,
-      runtime: calculateRuntime(subagent.startedAt)
-    }));
-
+    const result = await pool.query(`
+      SELECT run_id, label, task, status, total_tokens, started_at, completed_at
+      FROM subagents
+      ORDER BY started_at DESC
+    `);
+    
+    const active: SubagentStatus[] = [];
+    const recent: SubagentStatus[] = [];
+    
+    for (const row of result.rows) {
+      const subagent: SubagentStatus = {
+        runId: row.run_id,
+        label: row.label,
+        task: row.task,
+        status: row.status,
+        totalTokens: row.total_tokens || 0,
+        startedAt: row.started_at,
+        completedAt: row.completed_at,
+        runtime: calculateRuntime(row.started_at)
+      };
+      
+      if (row.status === 'running' || row.status === 'active') {
+        active.push(subagent);
+      } else {
+        recent.push(subagent);
+      }
+    }
+    
     return { active, recent };
   } catch (error) {
     console.error('Failed to get all subagents:', error);
     return { active: [], recent: [] };
+  } finally {
+    await pool.end();
   }
 }
 
@@ -56,12 +95,17 @@ export async function getAllSubagents(): Promise<SubagentsData> {
  * Get active subagents count
  */
 export async function getActiveSubagentsCount(): Promise<number> {
+  const pool = new Pool(POOL_CONFIG);
+  
   try {
-    const content = await fs.readFile(SUBAGENTS_PATH, 'utf-8');
-    const data = JSON.parse(content);
-    return (data.active || []).length;
+    const result = await pool.query(
+      "SELECT COUNT(*) FROM subagents WHERE status IN ('running', 'active')"
+    );
+    return parseInt(result.rows[0].count);
   } catch (error) {
     return 0;
+  } finally {
+    await pool.end();
   }
 }
 
@@ -69,32 +113,34 @@ export async function getActiveSubagentsCount(): Promise<number> {
  * Get specific subagent by runId
  */
 export async function getSubagentByRunId(runId: string): Promise<SubagentStatus | null> {
+  const pool = new Pool(POOL_CONFIG);
+  
   try {
-    const content = await fs.readFile(SUBAGENTS_PATH, 'utf-8');
-    const data = JSON.parse(content);
-
-    // Search in active list first
-    const active = (data.active || []).find((s: any) => s.runId === runId);
-    if (active) {
-      return {
-        ...active,
-        runtime: calculateRuntime(active.startedAt)
-      };
+    const result = await pool.query(
+      'SELECT run_id, label, task, status, total_tokens, started_at, completed_at FROM subagents WHERE run_id = $1',
+      [runId]
+    );
+    
+    if (result.rows.length === 0) {
+      return null;
     }
-
-    // Then search in recent list
-    const recent = (data.recent || []).find((s: any) => s.runId === runId);
-    if (recent) {
-      return {
-        ...recent,
-        runtime: calculateRuntime(recent.startedAt)
-      };
-    }
-
-    return null;
+    
+    const row = result.rows[0];
+    return {
+      runId: row.run_id,
+      label: row.label,
+      task: row.task,
+      status: row.status,
+      totalTokens: row.total_tokens || 0,
+      startedAt: row.started_at,
+      completedAt: row.completed_at,
+      runtime: calculateRuntime(row.started_at)
+    };
   } catch (error) {
     console.error('Failed to get subagent:', error);
     return null;
+  } finally {
+    await pool.end();
   }
 }
 
@@ -102,34 +148,47 @@ export async function getSubagentByRunId(runId: string): Promise<SubagentStatus 
  * Get subagents by status
  */
 export async function getSubagentsByStatus(status: string): Promise<SubagentStatus[]> {
+  const pool = new Pool(POOL_CONFIG);
+  
   try {
-    const content = await fs.readFile(SUBAGENTS_PATH, 'utf-8');
-    const data = JSON.parse(content);
-
-    const all = [...(data.active || []), ...(data.recent || [])];
-    const filtered = all.filter((s: any) => s.status === status);
-
-    return filtered.map((subagent: any) => ({
-      ...subagent,
-      runtime: calculateRuntime(subagent.startedAt)
+    const result = await pool.query(
+      'SELECT run_id, label, task, status, total_tokens, started_at, completed_at FROM subagents WHERE status = $1',
+      [status]
+    );
+    
+    return result.rows.map(row => ({
+      runId: row.run_id,
+      label: row.label,
+      task: row.task,
+      status: row.status,
+      totalTokens: row.total_tokens || 0,
+      startedAt: row.started_at,
+      completedAt: row.completed_at,
+      runtime: calculateRuntime(row.started_at)
     }));
   } catch (error) {
     console.error('Failed to get subagents by status:', error);
     return [];
+  } finally {
+    await pool.end();
   }
 }
 
 /**
- * Calculate total tokens used by all active subagents
+ * Get total tokens used by all active subagents
  */
 export async function getTotalActiveTokens(): Promise<number> {
+  const pool = new Pool(POOL_CONFIG);
+  
   try {
-    const content = await fs.readFile(SUBAGENTS_PATH, 'utf-8');
-    const data = JSON.parse(content);
-    
-    return (data.active || []).reduce((sum: number, s: any) => sum + (s.totalTokens || 0), 0);
+    const result = await pool.query(
+      "SELECT COALESCE(SUM(total_tokens), 0) as total FROM subagents WHERE status IN ('running', 'active')"
+    );
+    return parseInt(result.rows[0].total);
   } catch (error) {
     return 0;
+  } finally {
+    await pool.end();
   }
 }
 
@@ -137,15 +196,18 @@ export async function getTotalActiveTokens(): Promise<number> {
  * Get average runtime of active subagents
  */
 export async function getAverageRuntime(): Promise<string> {
+  const pool = new Pool(POOL_CONFIG);
+  
   try {
-    const content = await fs.readFile(SUBAGENTS_PATH, 'utf-8');
-    const data = JSON.parse(content);
+    const result = await pool.query(
+      "SELECT started_at FROM subagents WHERE status IN ('running', 'active')"
+    );
     
-    const active = data.active || [];
+    const active = result.rows;
     if (active.length === 0) return '0m';
 
-    const totalMinutes = active.reduce((sum: number, s: any) => {
-      const start = new Date(s.startedAt);
+    const totalMinutes = active.reduce((sum, row) => {
+      const start = new Date(row.started_at);
       const now = new Date();
       return sum + Math.floor((now.getTime() - start.getTime()) / 60000);
     }, 0);
@@ -159,48 +221,7 @@ export async function getAverageRuntime(): Promise<string> {
     return `${hours}h ${mins}m`;
   } catch (error) {
     return '0m';
-  }
-}
-
-/**
- * Cleanup old completed subagents (older than 24 hours)
- */
-export async function cleanupOldSubagents(): Promise<{ cleaned: number }> {
-  try {
-    const content = await fs.readFile(SUBAGENTS_PATH, 'utf-8');
-    const data = JSON.parse(content);
-    
-    const now = new Date().getTime();
-    const oneDayMs = 24 * 60 * 60 * 1000;
-    
-    // Filter out old recent subagents
-    const recent = (data.recent || []).filter((s: any) => {
-      if (!s.completedAt) return true; // Keep if no completion time
-      const completed = new Date(s.completedAt).getTime();
-      return (now - completed) < oneDayMs;
-    });
-    
-    const cleaned = data.recent.length - recent.length;
-    data.recent = recent;
-    
-    await fs.writeFile(SUBAGENTS_PATH, JSON.stringify(data, null, 2), 'utf-8');
-    
-    return { cleaned };
-  } catch (error) {
-    console.error('Failed to cleanup old subagents:', error);
-    return { cleaned: 0 };
-  }
-}
-
-/**
- * Initialize subagents file if it doesn't exist
- */
-export async function initializeSubagentsFile(): Promise<void> {
-  try {
-    await fs.access(SUBAGENTS_PATH);
-  } catch (error) {
-    // File doesn't exist, create it
-    const initialData: SubagentsData = { active: [], recent: [] };
-    await fs.writeFile(SUBAGENTS_PATH, JSON.stringify(initialData, null, 2), 'utf-8');
+  } finally {
+    await pool.end();
   }
 }

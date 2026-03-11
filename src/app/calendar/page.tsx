@@ -39,61 +39,28 @@ export default function CalendarPage() {
     }
   }, []);
 
-  // Calculate next run time for cron schedule
-  const calculateNextRun = (schedule: string): Date => {
-    const now = new Date();
-    const parts = schedule.split(' ');
-    const minute = parseInt(parts[0]);
-    const hour = parseInt(parts[1]);
-    
-    let next = new Date(now);
-    if (parts[0] === '*/30') {
-      // Every 30 minutes: next half-hour or next hour
-      if (next.getMinutes() < 30) {
-        next.setMinutes(30, 0, 0);
-      } else {
-        next.setHours(next.getHours() + 1, 0, 0, 0);
-      }
-    } else {
-      // Specific time
-      next.setHours(hour, minute, 0, 0);
-      if (next <= now) {
-        next.setDate(next.getDate() + 1);
-      }
+  // Fetch cron jobs
+  const fetchCronJobs = useCallback(async () => {
+    try {
+      const res = await fetch('/api/cron');
+      const data = await res.json();
+      setCronJobs(data.cronJobs || []);
+    } catch (error) {
+      console.error('Failed to fetch cron jobs:', error);
     }
-    return next;
-  };
+  }, []);
 
   useEffect(() => {
     fetchAgentStatus();
-    
-    // Load cron jobs
-    const hardcodedCronJobs: CronJob[] = [
-      {
-        schedule: '0 8 * * *',
-        command: '/home/kevin/.openclaw/workspace/cron/daily-briefing.sh',
-        description: 'Morning Briefing',
-        nextRun: calculateNextRun('0 8 * * *')
-      },
-      {
-        schedule: '0 20 * * *',
-        command: '/home/kevin/.openclaw/workspace/cron/evening-summary.sh',
-        description: 'Evening Summary',
-        nextRun: calculateNextRun('0 20 * * *')
-      },
-      {
-        schedule: '*/30 * * * *',
-        command: 'node tools/heartbeat-integration.js',
-        description: 'Heartbeat Check (every 30 min)',
-        nextRun: calculateNextRun('*/30 * * * *')
-      }
-    ];
-    setCronJobs(hardcodedCronJobs);
+    fetchCronJobs();
     
     // Poll for updates every 30 seconds
-    const interval = setInterval(fetchAgentStatus, 30000);
+    const interval = setInterval(() => {
+      fetchAgentStatus();
+      fetchCronJobs();
+    }, 30000);
     return () => clearInterval(interval);
-  }, [fetchAgentStatus]);
+  }, [fetchAgentStatus, fetchCronJobs]);
 
   const handleAddEvent = async (eventData: any) => {
     try {
@@ -170,7 +137,7 @@ export default function CalendarPage() {
                       <div className="text-sm font-medium text-[#e8e8e8]">{job.description}</div>
                       <div className="text-xs text-[#888888] mt-0.5">
                         <span className="font-mono bg-[#1a1a1f] px-1.5 py-0.5 rounded">{job.schedule}</span>
-                        <span className="ml-2">Next: {job.nextRun.toLocaleDateString('en-US', { 
+                        <span className="ml-2">Next: {new Date(job.nextRun).toLocaleDateString('en-US', { 
                           weekday: 'short', 
                           month: 'short', 
                           day: 'numeric',

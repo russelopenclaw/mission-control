@@ -23,7 +23,8 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json({ success: true });
     response.cookies.set('session', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      // Only use Secure flag for HTTPS connections
+      secure: process.env.FORCE_SECURE_COOKIE === 'true' || false,
       sameSite: 'lax',
       maxAge: 86400, // 24 hours
       path: '/',

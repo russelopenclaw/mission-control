@@ -15,8 +15,17 @@ interface CalendarEvent {
   recurrence?: string;
 }
 
+/**
+ * Get current date in US/Chicago timezone
+ */
+function getChicagoToday(): string {
+  const now = new Date();
+  const chicagoStr = now.toLocaleString('en-US', { timeZone: 'America/Chicago' });
+  const chicagoDate = new Date(chicagoStr);
+  return chicagoDate.toISOString().split('T')[0];
+}
+
 export default function CalendarWidget() {
-  const today = new Date();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -25,8 +34,8 @@ export default function CalendarWidget() {
       try {
         const res = await fetch('/api/calendar/events');
         const data = await res.json();
-        // Get today's events and upcoming (next 5 days)
-        const todayStr = today.toISOString().split('T')[0];
+        // Get today's events and upcoming (next 5 days) using Chicago time
+        const todayStr = getChicagoToday();
         const filtered = (data.events || [])
           .filter((e: CalendarEvent) => {
             const d = e.date || (e.start ? e.start.split('T')[0] : null);
@@ -44,7 +53,7 @@ export default function CalendarWidget() {
     fetchEvents();
     const interval = setInterval(fetchEvents, 60000); // Refresh every minute
     return () => clearInterval(interval);
-  }, [today]);
+  }, []);
 
   const formatTime = (time: string) => {
     if (!time) return '';
@@ -100,10 +109,10 @@ export default function CalendarWidget() {
           
           <div className="space-y-2">
             {events.map((event) => (
-              <div key={event.id} className="bg-[#0d0d0f] border border-[#27272a] rounded-md p-2.5 flex items-center gap-3">
-                <span className="text-xl">{getTypeIcon(event)}</span>
-                <div className="flex-1">
-                  <div className="text-sm font-medium text-[#e8e8e8]">{event.title}</div>
+              <div key={event.id} className="bg-[#0d0d0f] border border-[#27272a] rounded-md p-3 sm:p-2.5 flex items-center gap-3 cursor-pointer active:bg-[#1a1a1f]">
+                <span className="text-xl flex-shrink-0">{getTypeIcon(event)}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium text-[#e8e8e8] truncate">{event.title}</div>
                   <div className="text-xs text-[#888888]">
                     {formatDate(event.date || event.start || '')} • {getEventTime(event)}
                     {event.recurrence && <span className="ml-1 text-[#888888]">(recurring)</span>}
@@ -115,12 +124,14 @@ export default function CalendarWidget() {
         </>
       )}
       
-      <a 
-        href="/calendar" 
-        className="block mt-3 w-full bg-[#1a1a1f] hover:bg-[#27272a] border border-[#27272a] text-[#888888] hover:text-white text-sm font-medium py-2 rounded-md transition-colors text-center"
-      >
-        View Full Calendar
-      </a>
+      <div className="mt-3">
+        <a 
+          href="/calendar" 
+          className="block w-full bg-[#1a1a1f] hover:bg-[#27272a] border border-[#27272a] text-[#888888] hover:text-white text-sm font-medium min-h-[44px] flex items-center justify-center rounded-md transition-colors"
+        >
+          View Full Calendar
+        </a>
+      </div>
     </div>
   );
 }

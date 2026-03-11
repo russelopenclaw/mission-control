@@ -83,17 +83,17 @@ export default function TaskManager() {
 
   return (
     <div className="bg-[#151518] border border-[#27272a] rounded-lg p-4">
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
         <h2 className="text-sm font-medium text-[#888888] uppercase tracking-wide">Task Management</h2>
         <button
           onClick={() => setShowAll(!showAll)}
-          className={`text-xs px-3 py-1 rounded border transition-colors ${
+          className={`text-xs px-4 py-2 rounded border transition-colors min-h-[44px] flex items-center justify-center ${
             showAll 
               ? 'bg-[#27272a] text-white border-[#3f3f46]' 
               : 'bg-[#0d0d0f] text-[#888888] border-[#27272a] hover:border-[#3f3f46]'
           }`}
         >
-          {showAll ? 'All' : 'Active'}
+          {showAll ? 'Show Active Only' : 'Show All Tasks'}
         </button>
       </div>
       <div className="mb-2 text-xs text-[#888888]">
@@ -110,14 +110,17 @@ export default function TaskManager() {
           </div>
         ) : (
           filteredTasks.map((task) => (
-            <div key={task.id} className="bg-[#0d0d0f] border border-[#27272a] rounded-md p-3 hover:border-[#3f3f46] transition-colors">
-              <div className="flex items-start justify-between mb-2">
-                <h3 className="font-medium text-[#e8e8e8] text-sm">{task.title}</h3>
-                <span className={`text-[10px] px-2 py-0.5 rounded border ${getStatusColor(columnToStatus(task.column))}`}>
+            <div 
+              key={task.id} 
+              className="bg-[#0d0d0f] border border-[#27272a] rounded-md p-3 sm:p-4 hover:border-[#3f3f46] transition-colors cursor-pointer active:bg-[#1a1a1f]"
+            >
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-2">
+                <h3 className="font-medium text-[#e8e8e8] text-sm flex-1">{task.title}</h3>
+                <span className={`text-[10px] px-2 py-1 rounded border ${getStatusColor(columnToStatus(task.column))}`}>
                   {task.column.replace('-', ' ')}
                 </span>
               </div>
-              <div className="flex items-center gap-3 text-xs text-[#888888]">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs text-[#888888]">
                 <span className={getPriorityColor(task.priority)}>
                   ⚡ {task.priority}
                 </span>

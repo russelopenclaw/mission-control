@@ -1,3 +1,6 @@
+> ⚠️ **DEPRECATED**: This document references old JSON files.
+> PostgreSQL is now the source of truth. See AGENTS.md for current practices.
+
 # Screensaver Video Agent - Complete Playbook
 
 ## Overview

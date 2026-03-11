@@ -4,7 +4,10 @@ A Kanban-style task management interface for Mission Control.
 
 ## Features
 
-### Kanban Board Columns
+##> ⚠️ **DEPRECATED**: This document references old JSON files.
+> PostgreSQL is now the source of truth. See AGENTS.md for current practices.
+
+# Kanban Board Columns
 - **Backlog** - Unassigned tasks, ideas, things to discuss, keep-sake items
 - **In Progress** - Currently being worked on
 - **Review** - Tasks waiting for Kevin's personal review

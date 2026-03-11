@@ -31,6 +31,20 @@ export default function LiveActivitySidebar({ agents }: LiveActivitySidebarProps
   const [subagents, setSubagents] = useState<{ active: SubagentStatus[]; recent: SubagentStatus[] }>({ active: [], recent: [] });
   const [expandedSubagent, setExpandedSubagent] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  // Collapse by default on mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      if (typeof window !== 'undefined') {
+        setIsCollapsed(window.innerWidth < 768);
+      }
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const fetchSubagents = async () => {
     setLoading(true);
@@ -101,10 +115,28 @@ export default function LiveActivitySidebar({ agents }: LiveActivitySidebarProps
   return (
     <div className="bg-[#151518] border-l border-[#27272a] h-full flex flex-col overflow-hidden">
       {/* Header with shadow separator */}
-      <div className="flex items-center justify-between p-4 border-b border-[#27272a] bg-[#151518]/95 backdrop-blur-sm sticky top-0">
-        <h2 className="text-sm font-medium text-[#888888] uppercase tracking-wide">
-          Live Activity
-        </h2>
+      <div 
+        className="flex items-center justify-between p-4 border-b border-[#27272a] bg-[#151518]/95 backdrop-blur-sm sticky top-0 cursor-pointer select-none"
+        onClick={() => setIsCollapsed(!isCollapsed)}
+      >
+        <div className="flex items-center gap-2 flex-1">
+          <button 
+            className="text-[#888888] hover:text-white transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+            aria-label={isCollapsed ? 'Expand' : 'Collapse'}
+          >
+            <svg 
+              className={`w-5 h-5 transition-transform duration-200 ${isCollapsed ? '-rotate-90' : 'rotate-0'}`} 
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          <h2 className="text-sm font-medium text-[#888888] uppercase tracking-wide">
+            Live Activity
+          </h2>
+        </div>
         <div className="flex items-center gap-1.5">
           <div className="w-2 h-2 bg-[#22c55e] rounded-full animate-pulse"></div>
           <span className="text-[10px] text-[#525252]">
@@ -114,7 +146,7 @@ export default function LiveActivitySidebar({ agents }: LiveActivitySidebarProps
       </div>
 
       {/* Scrollable Content Area */}
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className={`flex-1 overflow-y-auto p-4 transition-all duration-300 ${isCollapsed ? 'opacity-0 pointer-events-none h-0 p-0' : 'opacity-100'}`}>
         <div className="space-y-3">
           {/* Main Agent Section */}
           <div className="mb-4">

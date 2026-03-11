@@ -52,11 +52,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, reminder }, { status: 201 });
     } else {
       // Map brain event handler fields to calendar format
+      // Support both formats:
+      // 1. Brain format: { start: "2026-03-03T14:00:00.000Z", end: "2026-03-03T15:00:00.000Z" }
+      // 2. Calendar format: { date: "2026-03-03", startTime: "14:00", endTime: "15:00" }
       const calendarEvent = {
         title: eventData.title || 'Untitled Event',
-        date: eventData.start ? eventData.start.split('T')[0] : new Date().toISOString().split('T')[0],
-        startTime: eventData.start ? eventData.start.split('T')[1]?.substring(0, 5) : undefined,
-        endTime: eventData.end ? eventData.end.split('T')[1]?.substring(0, 5) : undefined,
+        date: eventData.date || (eventData.start ? eventData.start.split('T')[0] : new Date().toISOString().split('T')[0]),
+        startTime: eventData.startTime || (eventData.start ? eventData.start.split('T')[1]?.substring(0, 5) : undefined),
+        endTime: eventData.endTime || (eventData.end ? eventData.end.split('T')[1]?.substring(0, 5) : undefined),
         type: eventData.type || 'personal',
         description: eventData.description || '',
         location: eventData.location

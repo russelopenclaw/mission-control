@@ -38,24 +38,50 @@ const MONTH_NAMES = [
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
+/**
+ * Get current date/time in US/Chicago timezone
+ */
+function getChicagoDate(date: Date = new Date()): Date {
+  // Convert to Chicago time string, then parse back
+  const chicagoStr = date.toLocaleString('en-US', { timeZone: 'America/Chicago' });
+  return new Date(chicagoStr);
+}
+
 export function formatDate(date: Date): string {
-  return date.toISOString().split('T')[0];
+  const chicagoDate = getChicagoDate(date);
+  return chicagoDate.toISOString().split('T')[0];
+}
+
+/**
+ * Get current date in US/Chicago timezone (YYYY-MM-DD format)
+ */
+export function getChicagoToday(): string {
+  const chicagoDate = getChicagoDate();
+  return formatDate(chicagoDate);
+}
+
+/**
+ * Check if a date string is today in Chicago time
+ */
+export function isChicagoToday(dateStr: string): boolean {
+  return dateStr === getChicagoToday();
 }
 
 export function getRelativeDays(start: Date, count: number): DayEvent[] {
   const days: DayEvent[] = [];
-  const today = formatDate(new Date());
+  const today = getChicagoToday();
   
   for (let i = 0; i < count; i++) {
     const date = new Date(start);
     date.setDate(date.getDate() + i);
     
-    const isToday = formatDate(date) === today;
+    const dateStr = formatDate(date);
+    const isToday = dateStr === today;
     const dayName = DAY_NAMES[date.getDay()];
     const monthDay = `${MONTH_NAMES[date.getMonth()]} ${date.getDate()}`;
     
     days.push({
-      date: formatDate(date),
+      date: dateStr,
       dayName: isToday ? `${dayName}, ${monthDay} - Today` : `${dayName}, ${monthDay}`,
       dayNumber: monthDay,
       isToday,
@@ -107,10 +133,10 @@ export function getMonthDays(year: number, month: number): MonthDay[][] {
 }
 
 export function getCurrentMonth(): { year: number; month: number } {
-  const now = new Date();
+  const chicagoNow = getChicagoDate();
   return {
-    year: now.getFullYear(),
-    month: now.getMonth()
+    year: chicagoNow.getFullYear(),
+    month: chicagoNow.getMonth()
   };
 }
 

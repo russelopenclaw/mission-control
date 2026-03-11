@@ -1,21 +1,26 @@
 import { NextResponse } from 'next/server';
-import { promises as fs } from 'fs';
-import path from 'path';
-
-const KANBAN_PATH = path.resolve(process.cwd(), '../kanban/tasks.json');
+import { query } from '@/lib/db';
 
 export async function GET() {
   try {
-    const content = await fs.readFile(KANBAN_PATH, 'utf-8');
-    const data = JSON.parse(content);
+    const result = await query('SELECT * FROM agents ORDER BY name');
     
-    // Return agents object from kanban/tasks.json
-    return NextResponse.json({
-      agents: data.agents || {}
-    });
+    const agents: any = {};
+    for (const agent of result.rows) {
+      agents[agent.name] = {
+        status: agent.status,
+        currentTask: agent.current_task,
+        lastActivity: agent.last_activity,
+      };
+    }
+    
+    return NextResponse.json({ agents });
+    
   } catch (error) {
-    console.error('Failed to read agent status:', error);
-    // Return empty agents if file doesn't exist
-    return NextResponse.json({ agents: {} });
+    console.error('[API /status] Error:', error);
+    return NextResponse.json(
+      { error: 'Database error', details: (error as Error).message },
+      { status: 500 }
+    );
   }
 }

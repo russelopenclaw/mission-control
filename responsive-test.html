@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Responsive Design Test - Mission Control</title>
+  <style>
+    /* Test grid for responsive breakpoints */
+    .test-grid {
+      display: grid;
+      gap: 1rem;
+      padding: 1rem;
+    }
+    
+    .test-card {
+      background: #151518;
+      border: 1px solid #27272a;
+      padding: 1rem;
+      border-radius: 8px;
+    }
+    
+    /* Mobile first - single column */
+    .test-grid {
+      grid-template-columns: 1fr;
+    }
+    
+    @media (min-width: 768px) {
+      .test-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    
+    @media (min-width: 1024px) {
+      .test-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+    
+    /* Touch target test */
+    .touch-button {
+      min-height: 44px;
+      min-width: 44px;
+      padding: 0.5rem 1rem;
+      background: #5e6ad2;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 0.5rem;
+    }
+    
+    /* Status indicator */
+    .breakpoint-indicator {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: #22c55e;
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      font-weight: bold;
+      z-index: 1000;
+    }
+  </style>
+</head>
+<body>
+  <div class="breakpoint-indicator" id="breakpoint">Loading...</div>
+  
+  <h1>Mission Control - Responsive Test</h1>
+  <p>Resize your browser to test responsive breakpoints</p>
+  
+  <h2>Touch Targets (min 44px)</h2>
+  <div>
+    <button class="touch-button">Button 1</button>
+    <button class="touch-button">Button 2</button>
+    <button class="touch-button">Button 3</button>
+  </div>
+  
+  <h2>Grid Layout</h2>
+  <div class="test-grid">
+    <div class="test-card"><strong>Card 1</strong><p>This is a test card</p></div>
+    <div class="test-card"><strong>Card 2</strong><p>This is a test card</p></div>
+    <div class="test-card"><strong>Card 3</strong><p>This is a test card</p></div>
+    <div class="test-card"><strong>Card 4</strong><p>This is a test card</p></div>
+    <div class="test-card"><strong>Card 5</strong><p>This is a test card</p></div>
+    <div class="test-card"><strong>Card 6</strong><p>This is a test card</p></div>
+  </div>
+  
+  <h2>Test Table (Horizontal Scroll)</h2>
+  <div style="overflow-x: auto;">
+    <table style="min-width: 600px; width: 100%;">
+      <thead>
+        <tr>
+          <th style="padding: 0.5rem; background: #27272a;">Column 1</th>
+          <th style="padding: 0.5rem; background: #27272a;">Column 2</th>
+          <th style="padding: 0.5rem; background: #27272a;">Column 3</th>
+          <th style="padding: 0.5rem; background: #27272a;">Column 4</th>
+          <th style="padding: 0.5rem; background: #27272a;">Column 5</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="padding: 0.5rem;">Data 1</td>
+          <td style="padding: 0.5rem;">Data 2</td>
+          <td style="padding: 0.5rem;">Data 3</td>
+          <td style="padding: 0.5rem;">Data 4</td>
+          <td style="padding: 0.5rem;">Data 5</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  
+  <script>
+    function updateBreakpoint() {
+      const width = window.innerWidth;
+      const indicator = document.getElementById('breakpoint');
+      
+      if (width < 480) {
+        indicator.textContent = '📱 Phone (< 480px)';
+        indicator.style.background = '#ef4444';
+      } else if (width < 768) {
+        indicator.textContent = '📱 Large Phone (480-767px)';
+        indicator.style.background = '#f97316';
+      } else if (width < 1024) {
+        indicator.textContent = '📱 Tablet (768-1023px)';
+        indicator.style.background = '#eab308';
+      } else {
+        indicator.textContent = '💻 Desktop (≥1024px)';
+        indicator.style.background = '#22c55e';
+      }
+    }
+    
+    window.addEventListener('resize', updateBreakpoint);
+    updateBreakpoint();
+  </script>
+</body>
+</html>

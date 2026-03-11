@@ -67,3 +67,261 @@ select:focus {
   outline: none;
   ring: 1px solid var(--accent);
 }
+
+/* ============================================
+   MOBILE-FIRST RESPONSIVE DESIGN
+   ============================================ */
+
+/* Base mobile styles (default - 320px+) */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+.agent-panel,
+.subagents-panel,
+.tasks-panel,
+.calendar-panel {
+  margin-bottom: 1rem;
+}
+
+/* Touch-friendly controls - minimum 44px touch targets */
+button,
+.btn,
+[role="button"] {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0.5rem 1rem;
+}
+
+/* Tables - horizontal scroll on mobile */
+.table-container,
+.table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+table {
+  min-width: 100%;
+}
+
+/* Agent status flex container - stack on mobile */
+.agent-status {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Tablet breakpoint (768px+) */
+@media (min-width: 768px) {
+  .dashboard-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .agent-status {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+}
+
+/* Desktop breakpoint (1024px+) */
+@media (min-width: 1024px) {
+  .dashboard-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Large desktop (1280px+) */
+@media (min-width: 1280px) {
+  .dashboard-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+  }
+}
+
+/* ============================================
+   MAX-WIDTH MEDIA QUERIES (Mobile adjustments)
+   ============================================ */
+
+/* Small tablets and below (max-width: 1024px) */
+@media (max-width: 1024px) {
+  .sidebar-fixed {
+    position: relative;
+    top: 0;
+    right: 0;
+    width: 100%;
+    height: auto;
+  }
+  
+  .main-content-wrapper {
+    padding-right: 0;
+  }
+}
+
+/* Tablets and below (max-width: 768px) */
+@media (max-width: 768px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .agent-panel,
+  .subagents-panel,
+  .tasks-panel,
+  .calendar-panel {
+    margin-bottom: 1rem;
+  }
+  
+  /* Stack stats cards in 2 columns on tablet */
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  
+  /* Make navigation more compact */
+  .nav-horizontal {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+    padding-bottom: 0.5rem;
+  }
+}
+
+/* Small phones (max-width: 480px) */
+@media (max-width: 480px) {
+  /* Force single column for everything */
+  .dashboard-grid,
+  .stats-grid {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .task-table {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .agent-status {
+    flex-direction: column;
+  }
+  
+  /* Reduce padding for compact layout */
+  .main-content {
+    padding: 0.75rem;
+  }
+  
+  /* Smaller text on small screens */
+  .text-base {
+    font-size: 0.875rem;
+  }
+}
+
+/* ============================================
+   UTILITY CLASSES FOR RESPONSIVE
+   ============================================ */
+
+/* Hide on mobile, show on desktop */
+.hidden-mobile {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .hidden-mobile {
+    display: block;
+  }
+}
+
+/* Show on mobile, hide on desktop */
+.show-mobile {
+  display: block;
+}
+
+@media (min-width: 768px) {
+  .show-mobile {
+    display: none;
+  }
+}
+
+/* Collapsible panel styles */
+.collapsible-panel {
+  transition: max-height 0.3s ease-out, opacity 0.3s ease;
+  overflow: hidden;
+}
+
+.collapsible-panel.collapsed {
+  max-height: 48px;
+  opacity: 0.7;
+}
+
+/* Hamburger menu icon */
+.hamburger-icon {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  z-index: 100;
+}
+
+.hamburger-icon span {
+  width: 24px;
+  height: 2px;
+  background: currentColor;
+  border-radius: 2px;
+  transition: all 0.3s linear;
+}
+
+.hamburger-icon.open span:nth-child(1) {
+  transform: translateY(11px) rotate(45deg);
+}
+
+.hamburger-icon.open span:nth-child(2) {
+  opacity: 0;
+}
+
+.hamburger-icon.open span:nth-child(3) {
+  transform: translateY(-11px) rotate(-45deg);
+}
+
+/* Slide-out menu */
+.slide-menu {
+  position: fixed;
+  top: 0;
+  left: -280px;
+  width: 280px;
+  height: 100vh;
+  background: var(--card);
+  border-right: 1px solid var(--border);
+  transition: left 0.3s ease;
+  z-index: 999;
+  overflow-y: auto;
+}
+
+.slide-menu.open {
+  left: 0;
+}
+
+.slide-menu-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 998;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.slide-menu-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Swipeable panels */
+.swipeable-panel {
+  touch-action: pan-x;
+}

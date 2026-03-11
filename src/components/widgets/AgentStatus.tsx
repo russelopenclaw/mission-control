@@ -50,8 +50,8 @@ export default function AgentStatus() {
           </div>
         ) : (
           agents.map((agent) => (
-            <div key={agent.name} className="bg-[#0d0d0f] border border-[#27272a] rounded-md p-3">
-              <div className="flex items-center gap-2 mb-1.5">
+            <div key={agent.name} className="bg-[#0d0d0f] border border-[#27272a] rounded-md p-3 sm:p-4">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-1.5">
                 <div className={`w-2 h-2 rounded-full ${getStatusColor(agent.data.status)}`}></div>
                 <span className="font-medium text-[#e8e8e8] text-sm">{agent.name}</span>
                 <span className="text-xs text-[#888888] capitalize">({agent.data.status})</span>
@@ -63,7 +63,7 @@ export default function AgentStatus() {
               )}
               {agent.data.lastActivity && (
                 <p className="text-[10px] text-[#525252] ml-4 mt-0.5">
-                  Last active: {new Date(agent.data.lastActivity).toLocaleString()}
+                  Last active: {new Date(agent.data.lastActivity).toLocaleDateString()}
                 </p>
               )}
             </div>

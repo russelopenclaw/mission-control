@@ -35,6 +35,7 @@ export default function TasksPage() {
   const [showModal, setShowModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isAddingTask, setIsAddingTask] = useState(false);
+  const [showMobileSidebar, setShowMobileSidebar] = useState(false);
 
   // Fetch tasks and agent status
   const fetchData = useCallback(async () => {
@@ -109,12 +110,12 @@ export default function TasksPage() {
     <DashboardLayout>
       <div className="relative">
         {/* Main Kanban Board */}
-        <div className="pr-[340px]">
-          <div className="flex items-center justify-between mb-4">
+        <div className="lg:pr-[340px]">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
             <h1 className="text-xl font-semibold text-white">Tasks</h1>
             <button
               onClick={() => setIsAddingTask(true)}
-              className="bg-[#5e6ad2] hover:bg-[#4f5bb5] text-white text-sm font-medium px-4 py-2 rounded-md transition-colors"
+              className="bg-[#5e6ad2] hover:bg-[#4f5bb5] text-white text-sm font-medium min-h-[44px] px-4 py-2 rounded-md transition-colors w-full sm:w-auto"
             >
               + Add Task
             </button>
@@ -125,24 +126,47 @@ export default function TasksPage() {
               <span className="text-[#888888]">Loading tasks...</span>
             </div>
           ) : (
-            <KanbanBoard
-              tasks={tasks}
-              onMoveTask={handleMoveTask}
-              onTaskClick={handleTaskClick}
-            />
+            <div className="overflow-x-auto">
+              <KanbanBoard
+                tasks={tasks}
+                onMoveTask={handleMoveTask}
+                onTaskClick={handleTaskClick}
+              />
+            </div>
           )}
         </div>
 
-        {/* Live Activity Sidebar - Fixed on Right */}
-        <div className="fixed top-0 right-0 h-screen w-[340px] z-40 hidden lg:block">
+        {/* Mobile Sidebar Overlay */}
+        {showMobileSidebar && (
+          <div 
+            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+            onClick={() => setShowMobileSidebar(false)}
+          />
+        )}
+
+        {/* Live Activity Sidebar - Slide-in on Mobile, Fixed on Desktop */}
+        <div className={`fixed top-[60px] right-0 h-[calc(100vh-60px)] w-[340px] z-50 transition-transform duration-300 ${
+          showMobileSidebar ? 'translate-x-0' : 'translate-x-full'
+        } lg:translate-x-0 lg:block`}>
           <LiveActivitySidebar agents={agents} />
         </div>
+
+        {/* Mobile Sidebar Toggle */}
+        <button
+          onClick={() => setShowMobileSidebar(!showMobileSidebar)}
+          className="fixed bottom-4 right-4 lg:hidden z-50 bg-[#1a1a1f] border border-[#27272a] hover:bg-[#27272a] text-[#e8e8e8] p-3 rounded-full shadow-lg min-w-[44px] min-h-[44px] flex items-center justify-center"
+          aria-label="Toggle activity panel"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          </svg>
+        </button>
       </div>
 
       {/* Task Details Modal */}
       {showModal && selectedTask && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#151518] border border-[#27272a] rounded-lg max-w-md w-full p-6">
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-[#151518] border border-[#27272a] rounded-lg max-w-md w-full p-4 sm:p-6 my-8">
             <div className="flex items-start justify-between mb-4">
               <h2 className="text-lg font-semibold text-white">{selectedTask.title}</h2>
               <button
@@ -238,8 +262,8 @@ function AddTaskModal({ onClose, onAdd }: {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-      <div className="bg-[#151518] border border-[#27272a] rounded-lg max-w-md w-full p-6">
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className="bg-[#151518] border border-[#27272a] rounded-lg max-w-md w-full p-4 sm:p-6 my-8">
         <h2 className="text-lg font-semibold text-white mb-4">Add New Task</h2>
         
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -251,7 +275,7 @@ function AddTaskModal({ onClose, onAdd }: {
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full bg-[#0d0d0f] border border-[#27272a] rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-[#5e6ad2]"
+              className="w-full bg-[#0d0d0f] border border-[#27272a] rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-[#5e6ad2] min-h-[44px]"
               placeholder="Task title"
               autoFocus
             />
@@ -270,7 +294,7 @@ function AddTaskModal({ onClose, onAdd }: {
             />
           </div>
           
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs text-[#888888] uppercase tracking-wide mb-1">
                 Assignee
@@ -278,7 +302,7 @@ function AddTaskModal({ onClose, onAdd }: {
               <select
                 value={assignee}
                 onChange={(e) => setAssignee(e.target.value)}
-                className="w-full bg-[#0d0d0f] border border-[#27272a] rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-[#5e6ad2]"
+                className="w-full bg-[#0d0d0f] border border-[#27272a] rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-[#5e6ad2] min-h-[44px]"
               >
                 <option value="kevin">Kevin</option>
                 <option value="alfred">Alfred</option>
@@ -293,7 +317,7 @@ function AddTaskModal({ onClose, onAdd }: {
               <select
                 value={priority}
                 onChange={(e) => setPriority(e.target.value as 'low' | 'medium' | 'high')}
-                className="w-full bg-[#0d0d0f] border border-[#27272a] rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-[#5e6ad2]"
+                className="w-full bg-[#0d0d0f] border border-[#27272a] rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-[#5e6ad2] min-h-[44px]"
               >
                 <option value="low">Low</option>
                 <option value="medium">Medium</option>
@@ -309,7 +333,7 @@ function AddTaskModal({ onClose, onAdd }: {
             <select
               value={column}
               onChange={(e) => setColumn(e.target.value as 'backlog' | 'in-progress' | 'review' | 'done')}
-              className="w-full bg-[#0d0d0f] border border-[#27272a] rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-[#5e6ad2]"
+              className="w-full bg-[#0d0d0f] border border-[#27272a] rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-[#5e6ad2] min-h-[44px]"
             >
               <option value="backlog">Backlog</option>
               <option value="in-progress">In Progress</option>
@@ -318,17 +342,17 @@ function AddTaskModal({ onClose, onAdd }: {
             </select>
           </div>
           
-          <div className="flex justify-end gap-2 mt-6">
+          <div className="flex flex-col sm:flex-row justify-end gap-2 mt-6">
             <button
               type="button"
               onClick={onClose}
-              className="bg-[#27272a] hover:bg-[#3f3f46] text-white text-sm font-medium px-4 py-2 rounded-md transition-colors"
+              className="bg-[#27272a] hover:bg-[#3f3f46] text-white text-sm font-medium min-h-[44px] px-4 py-2 rounded-md transition-colors w-full sm:w-auto"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="bg-[#5e6ad2] hover:bg-[#4f5bb5] text-white text-sm font-medium px-4 py-2 rounded-md transition-colors"
+              className="bg-[#5e6ad2] hover:bg-[#4f5bb5] text-white text-sm font-medium min-h-[44px] px-4 py-2 rounded-md transition-colors w-full sm:w-auto"
             >
               Add Task
             </button>
