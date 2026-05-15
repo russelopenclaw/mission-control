@@ -8,7 +8,7 @@ import LiveActivitySidebar from '@/components/widgets/LiveActivitySidebar';
 interface Task {
   id: string;
   title: string;
-  column: 'backlog' | 'in-progress' | 'review' | 'done';
+  column: 'BACKLOG' | 'READY' | 'IN_PROGRESS' | 'VALIDATION' | 'DONE' | 'BLOCKED';
   assignee: 'kevin' | 'alfred' | 'jeeves' | string;
   priority: 'low' | 'medium' | 'high';
   createdAt: string;
@@ -65,7 +65,7 @@ export default function TasksPage() {
     return () => clearInterval(interval);
   }, [fetchData]);
 
-  const handleMoveTask = async (taskId: string, newColumn: 'backlog' | 'in-progress' | 'review' | 'done') => {
+  const handleMoveTask = async (taskId: string, newColumn: 'BACKLOG' | 'READY' | 'IN_PROGRESS' | 'VALIDATION' | 'DONE' | 'BLOCKED') => {
     try {
       const response = await fetch('/api/tasks', {
         method: 'PUT',
@@ -246,7 +246,7 @@ function AddTaskModal({ onClose, onAdd }: {
   const [description, setDescription] = useState('');
   const [assignee, setAssignee] = useState('alfred');
   const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('medium');
-  const [column, setColumn] = useState<'backlog' | 'in-progress' | 'review' | 'done'>('backlog');
+  const [column, setColumn] = useState<'BACKLOG' | 'READY' | 'IN_PROGRESS' | 'VALIDATION' | 'DONE' | 'BLOCKED'>('BACKLOG');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -332,13 +332,15 @@ function AddTaskModal({ onClose, onAdd }: {
             </label>
             <select
               value={column}
-              onChange={(e) => setColumn(e.target.value as 'backlog' | 'in-progress' | 'review' | 'done')}
+              onChange={(e) => setColumn(e.target.value as 'BACKLOG' | 'READY' | 'IN_PROGRESS' | 'VALIDATION' | 'DONE' | 'BLOCKED')}
               className="w-full bg-[#0d0d0f] border border-[#27272a] rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-[#5e6ad2] min-h-[44px]"
             >
-              <option value="backlog">Backlog</option>
-              <option value="in-progress">In Progress</option>
-              <option value="review">Review</option>
-              <option value="done">Done</option>
+              <option value="BACKLOG">Backlog</option>
+              <option value="READY">Ready</option>
+              <option value="IN_PROGRESS">In Progress</option>
+              <option value="VALIDATION">Validation</option>
+              <option value="DONE">Done</option>
+              <option value="BLOCKED">Blocked</option>
             </select>
           </div>
           

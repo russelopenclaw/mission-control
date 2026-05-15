@@ -17,7 +17,7 @@ export default function DayCell({ day, onClick }: DayCellProps) {
   return (
     <div
       onClick={() => onClick?.(day)}
-      className={`min-h-[100px] p-2 border border-[#27272a] cursor-pointer transition-colors hover:bg-[#1f1f22] ${
+      className={`min-h-[60px] sm:min-h-[80px] lg:min-h-[100px] p-1.5 sm:p-2 border border-[#27272a] cursor-pointer transition-colors hover:bg-[#1f1f22] ${
         !day.isCurrentMonth ? 'bg-[#0d0d0f]/50' : 'bg-[#0d0d0f]'
       } ${day.isToday ? 'ring-1 ring-[#5e6ad2]' : ''}`}
     >

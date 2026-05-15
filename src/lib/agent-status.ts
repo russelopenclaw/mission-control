@@ -16,7 +16,7 @@ interface AgentStatus {
 
 /**
  * Update agent status in PostgreSQL agents table
- * @param agent - Agent name (e.g., 'alfred', 'jeeves')
+ * @param agent - Agent name (e.g., 'alfred')
  * @param status - Agent status: 'working' or 'idle'
  * @param currentTask - Current task description
  */

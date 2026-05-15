@@ -70,7 +70,7 @@ async function isTaskCompleted(agentName: string, currentTask: string): Promise<
     // Check if agent's current task is in "done" column
     const result = await pool.query(
       'SELECT id FROM tasks WHERE assignee = $1 AND column_name = $2 AND LOWER(title) = ANY($3)',
-      [agentName, 'done', [`%${currentTask.toLowerCase().substring(0, 50)}%`]]
+      [agentName, 'DONE', [`%${currentTask.toLowerCase().substring(0, 50)}%`]]
     );
     
     return result.rows.length > 0;
@@ -145,7 +145,7 @@ export async function checkStuckTasks(): Promise<{ recovered: number }> {
     const result = await pool.query(`
       SELECT id, title, assignee, column_name, updated_at, linked_subagent
       FROM tasks
-      WHERE column_name = 'in-progress'
+      WHERE column_name = 'IN_PROGRESS'
         AND updated_at < NOW() - INTERVAL '30 minutes'
       ORDER BY updated_at ASC
     `);

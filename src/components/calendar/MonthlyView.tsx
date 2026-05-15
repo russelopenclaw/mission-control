@@ -6,25 +6,101 @@ import DayCell from './DayCell';
 import DayModal from './DayModal';
 
 export default function MonthlyView() {
+  const now = getCurrentMonth();
   const [monthName, setMonthName] = useState('');
-  const [year, setYear] = useState(2026);
-  const [month, setMonth] = useState(2);
+  const [year, setYear] = useState(now.year);
+  const [month, setMonth] = useState(now.month);
   const [weeks, setWeeks] = useState<MonthDay[][]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDay, setSelectedDay] = useState<MonthDay | null>(null);
 
   useEffect(() => {
     fetchMonthlyData(year, month);
+    
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(() => {
+      fetchMonthlyData(year, month);
+    }, 30000);
+    
+    return () => clearInterval(interval);
   }, [year, month]);
 
   const fetchMonthlyData = async (y: number, m: number) => {
     try {
-      const res = await fetch(`/api/calendar/month?year=${y}&month=${m}`);
+      // Get first and last day of the month
+      const startDate = new Date(y, m, 1);
+      const endDate = new Date(y, m + 1, 0);
+      
+      const res = await fetch(
+        `/api/calendar/events?from=${startDate.toISOString()}&to=${endDate.toISOString()}`
+      );
       const data = await res.json();
-      setMonthName(data.monthName);
-      setYear(data.year);
-      setMonth(data.month);
-      setWeeks(data.weeks || []);
+      
+      // Build the month grid with Google Calendar events
+      const monthName = getMonthName(m);
+      setMonthName(monthName);
+      setYear(y);
+      setMonth(m);
+      
+      // Create weeks array
+      const weeks: MonthDay[][] = [];
+      const firstDayOfMonth = new Date(y, m, 1);
+      const lastDayOfMonth = new Date(y, m + 1, 0);
+      const startingDayOfWeek = firstDayOfMonth.getDay(); // 0 = Sunday
+      const totalDays = lastDayOfMonth.getDate();
+      
+      // Get events for this month
+      const monthEvents = data.events || [];
+      
+      let currentDay = 1 - startingDayOfWeek; // Start from previous month if needed
+      
+      while (currentDay <= totalDays || weeks.length < 6) {
+        const week: MonthDay[] = [];
+        
+        for (let i = 0; i < 7; i++) {
+          const dayDate = new Date(y, m, currentDay);
+          const dateStr = dayDate.toLocaleDateString('en-CA'); // YYYY-MM-DD local date
+          const isInCurrentMonth = currentDay >= 1 && currentDay <= totalDays;
+          
+          // Get events for this day - convert UTC to local date for comparison
+          const dayEvents = monthEvents
+            .filter((event: any) => {
+              const eventStartDate = event.start ? new Date(event.start) : null;
+              if (!eventStartDate) return false;
+              const eventDateStr = eventStartDate.toLocaleDateString('en-CA');
+              return eventDateStr === dateStr;
+            })
+            .map((event: any) => ({
+              id: event.id,
+              title: event.summary || 'Untitled',
+              type: event.allDay ? 'personal' : (event.recurring ? 'personal' : 'meeting'),
+              startTime: event.start && !event.allDay ? new Date(event.start).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : undefined,
+              endTime: event.end && !event.allDay ? new Date(event.end).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : undefined,
+              allDay: event.allDay,
+              location: event.location || undefined,
+              description: event.description || undefined,
+            }));
+          
+          week.push({
+            date: dateStr,
+            dayNumber: currentDay,
+            isCurrentMonth: currentDay >= 1 && currentDay <= totalDays,
+            isToday: dateStr === new Date().toISOString().split('T')[0],
+            events: dayEvents,
+          });
+          
+          currentDay++;
+        }
+        
+        weeks.push(week);
+        
+        // Stop if we've passed the last day and completed a week
+        if (currentDay > totalDays && week.every(d => !d.isCurrentMonth)) {
+          break;
+        }
+      }
+      
+      setWeeks(weeks);
       setIsLoading(false);
     } catch (error) {
       console.error('Failed to fetch monthly calendar:', error);
@@ -109,10 +185,18 @@ export default function MonthlyView() {
       <div className="border border-[#27272a] rounded-lg overflow-hidden">
         {/* Weekday Headers */}
         <div className="grid grid-cols-7 bg-[#0d0d0f] border-b border-[#27272a]">
-          {weekDays.map((day) => (
+          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
             <div
-              key={day}
-              className="py-2 text-center text-xs font-medium text-[#888888] uppercase tracking-wide"
+              key={i}
+              className="py-2 text-center text-xs font-medium text-[#888888] sm:hidden"
+            >
+              {day}
+            </div>
+          ))}
+          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, i) => (
+            <div
+              key={i}
+              className="py-2 text-center text-xs font-medium text-[#888888] uppercase tracking-wide hidden sm:block"
             >
               {day}
             </div>

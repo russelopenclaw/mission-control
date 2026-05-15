@@ -80,7 +80,7 @@ export async function getInProgressTasks(agent: string): Promise<Task[]> {
   try {
     const result = await pool.query(
       'SELECT id, title, column_name, priority, created_at, linked_subagent FROM tasks WHERE assignee = $1 AND column_name = $2',
-      [agent, 'in-progress']
+      [agent, 'IN_PROGRESS']
     );
     
     return result.rows;
@@ -106,7 +106,7 @@ export async function markTaskInProgress(
     // Update task to in-progress
     const result = await pool.query(`
       UPDATE tasks 
-      SET column_name = 'in-progress',
+      SET column_name = 'IN_PROGRESS',
           assignee = $1,
           started_at = COALESCE(started_at, NOW()),
           updated_at = NOW(),
@@ -143,7 +143,7 @@ export async function markTaskDone(
   try {
     const result = await pool.query(`
       UPDATE tasks 
-      SET column_name = 'done',
+      SET column_name = 'DONE',
           completed_at = NOW(),
           updated_at = NOW()
       WHERE id = $1

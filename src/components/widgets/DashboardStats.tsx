@@ -40,14 +40,17 @@ export default function DashboardStats() {
         const activeSubagents = subagents.length;
         
         // Count tasks in different states
-        const inProgressTasks = tasks.filter((t: any) => t.column === 'in-progress').length;
-        const urgentItems = tasks.filter((t: any) => t.priority === 'high' && t.column !== 'done').length;
+        const inProgressTasks = tasks.filter((t: any) => t.column === 'IN_PROGRESS').length;
+        const urgentItems = tasks.filter((t: any) => {
+          const col = (t.column || t.column_name || '').toLowerCase();
+          return t.priority === 'high' && col !== 'done' && col !== 'archived';
+        }).length;
         
         // Count tasks created today (only in-progress tasks)
         const today = new Date().toDateString();
         const activeTasksToday = tasks.filter((t: any) => {
           const createdDate = new Date(t.createdAt).toDateString();
-          return createdDate === today && t.column === 'in-progress';
+          return createdDate === today && t.column === 'IN_PROGRESS';
         }).length;
         
         setStats({

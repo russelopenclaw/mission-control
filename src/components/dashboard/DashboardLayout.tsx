@@ -8,64 +8,111 @@ interface DashboardLayoutProps {
   children: React.ReactNode;
 }
 
+const pageTitles: Record<string, string> = {
+  '/': 'Home',
+  '/brain': 'Brain',
+  '/memory': 'Memory',
+  '/calendar': 'Calendar',
+  '/docs': 'Docs',
+  '/briefing': 'Briefing',
+  '/plex': 'Plex',
+  '/trends': 'Trends',
+  '/jobs': 'Jobs',
+};
+
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const pathname = usePathname();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const pageTitle = pageTitles[pathname] || 'Mission Control';
   
   const navItems = [
     { href: '/', label: 'Home', icon: '🏠' },
-    { href: '/tasks', label: 'Tasks', icon: '📋' },
-    { href: '/agents', label: 'Agents', icon: '🤖' },
     { href: '/brain', label: 'Brain', icon: '🧠' },
     { href: '/memory', label: 'Memory', icon: '💭' },
     { href: '/calendar', label: 'Calendar', icon: '📅' },
     { href: '/docs', label: 'Docs', icon: '📚' },
+    { href: '/briefing', label: 'Briefing', icon: '☀️' },
+    { href: '/plex', label: 'Plex', icon: '🎬' },
+    { href: '/trends', label: 'Trends', icon: '🔥' },
     { href: '/jobs', label: 'Jobs', icon: '💼' },
-    { href: '/transcriptions', label: 'Transcriptions', icon: '🎙️' },
   ];
+
+  const sidebarWidth = sidebarCollapsed ? 'w-16' : 'w-64';
+  const mainMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
   
   return (
     <div className="min-h-screen bg-[#0a0a0b]">
-      {/* Mobile Menu Toggle */}
-      <button 
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-[#1a1a1b] rounded-md text-white"
-        onClick={() => setShowMobileMenu(!showMobileMenu)}
-      >
-        ☰
-      </button>
+      {/* Mobile Header */}
+      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-[#151518] border-b border-[#27272a]">
+        <div className="flex items-center justify-between h-14 px-4">
+          <button 
+            className="p-2 -ml-2 text-[#a1a1a1] hover:text-white transition-colors"
+            onClick={() => setShowMobileMenu(!showMobileMenu)}
+            aria-label="Toggle menu"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+          <h1 className="text-base font-semibold text-[#e8e8e8]">{pageTitle}</h1>
+          <div className="w-10" />
+        </div>
+      </header>
       
       {/* Sidebar */}
-      <aside className={`fixed top-0 left-0 h-full w-64 bg-[#151518] border-r border-[#27272a] z-40 transform transition-transform duration-300 lg:translate-x-0 ${showMobileMenu ? 'translate-x-0' : '-translate-x-full'}`}>
-        <div className="p-6">
-          <h1 className="text-xl font-bold text-[#e8e8e8]">🦞 Mission Control</h1>
-          <p className="text-xs text-[#71717a] mt-1">PostgreSQL Edition</p>
+      <aside className={`fixed top-0 left-0 h-full ${sidebarWidth} bg-[#151518] border-r border-[#27272a] z-40 transform transition-all duration-300 lg:translate-x-0 ${showMobileMenu ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className={`p-4 flex items-center ${sidebarCollapsed ? 'justify-center' : 'justify-between'}`}>
+          {!sidebarCollapsed && (
+            <div>
+              <h1 className="text-lg font-bold text-[#e8e8e8]">🦞 Mission Control</h1>
+              <p className="text-[10px] text-[#71717a]">PostgreSQL Edition</p>
+            </div>
+          )}
+          <button
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className="p-1.5 text-[#525252] hover:text-[#a1a1a1] transition-colors rounded hover:bg-[#27272a]"
+            aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            <svg className={`w-4 h-4 transition-transform duration-300 ${sidebarCollapsed ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+            </svg>
+          </button>
         </div>
         
-        <nav className="mt-6 px-3">
+        <nav className="mt-2 px-2">
           {navItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className={`block px-4 py-3 rounded-lg mb-2 transition-colors ${
+              className={`flex items-center ${sidebarCollapsed ? 'justify-center' : ''} px-3 py-2.5 rounded-lg mb-1 transition-colors ${
                 pathname === item.href
                   ? 'bg-[#22c55e]/10 text-[#22c55e] border border-[#22c55e]/20'
-                  : 'text-[#a1a1a1] hover:bg-[#27272a] hover:text-[#e8e8e8]'
+                  : 'text-[#a1a1a1] hover:bg-[#27272a] hover:text-[#e8e8e8] border border-transparent'
               }`}
               onClick={() => setShowMobileMenu(false)}
+              title={sidebarCollapsed ? item.label : undefined}
             >
-              <span className="text-lg mr-2">{item.icon}</span>
-              {item.label}
+              <span className="text-lg">{item.icon}</span>
+              {!sidebarCollapsed && <span className="ml-3 text-sm">{item.label}</span>}
             </Link>
           ))}
         </nav>
         
         {/* Status indicator */}
-        <div className="absolute bottom-6 left-6 right-6 p-3 bg-[#0d0d0f] rounded-lg border border-[#27272a]">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-[#22c55e] animate-pulse"></div>
-            <span className="text-xs text-[#71717a]">Live: PostgreSQL</span>
+        {!sidebarCollapsed && (
+          <div className="absolute bottom-6 left-4 right-4 p-3 bg-[#0d0d0f] rounded-lg border border-[#27272a]">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-[#22c55e] animate-pulse"></div>
+              <span className="text-xs text-[#71717a]">Live: PostgreSQL</span>
+            </div>
           </div>
-        </div>
+        )}
+        {sidebarCollapsed && (
+          <div className="absolute bottom-6 left-0 right-0 flex justify-center">
+            <div className="w-2 h-2 rounded-full bg-[#22c55e] animate-pulse" title="Live"></div>
+          </div>
+        )}
       </aside>
       
       {/* Overlay for mobile */}
@@ -77,7 +124,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       )}
       
       {/* Main Content */}
-      <main className="lg:ml-64 p-6 lg:p-8">
+      <main className={`${mainMargin} p-4 pt-18 lg:p-8 lg:pt-8 transition-all duration-300`}>
         {children}
       </main>
     </div>

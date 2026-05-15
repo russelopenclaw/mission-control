@@ -53,7 +53,7 @@ export default function CalendarPage() {
   useEffect(() => {
     fetchAgentStatus();
     fetchCronJobs();
-    
+
     // Poll for updates every 30 seconds
     const interval = setInterval(() => {
       fetchAgentStatus();
@@ -64,18 +64,48 @@ export default function CalendarPage() {
 
   const handleAddEvent = async (eventData: any) => {
     try {
+      // Convert form data to Google Calendar API format
+      const startDateTime = eventData.startTime
+        ? `${eventData.date}T${eventData.startTime}:00`
+        : eventData.date; // all-day if no time
+
+      const endDateTime = eventData.endTime
+        ? `${eventData.date}T${eventData.endTime}:00`
+        : eventData.startTime
+          ? `${eventData.date}T${eventData.endTime || eventData.startTime}:00` // default 1hr if no end
+          : eventData.date; // all-day
+
+      const payload: any = {
+        summary: eventData.title,
+        start: startDateTime,
+        end: endDateTime,
+        description: eventData.description,
+        location: eventData.location,
+        reminders: [{ method: 'popup', minutes: 0 }], // default reminder at event time
+      };
+
+      if (!eventData.startTime) {
+        payload.allDay = true;
+      }
+
       const response = await fetch('/api/calendar/events', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(eventData)
+        body: JSON.stringify(payload)
       });
-      
+
       if (response.ok) {
         setShowEventModal(false);
-        // Could refresh the calendar data here
+        // Refresh calendar data
+        window.location.reload();
+      } else {
+        const error = await response.json();
+        console.error('Failed to add event:', error);
+        alert('Failed to create event: ' + (error.errorMessage || 'Unknown error'));
       }
     } catch (error) {
       console.error('Failed to add event:', error);
+      alert('Failed to create event');
     }
   };
 
@@ -93,7 +123,7 @@ export default function CalendarPage() {
     <DashboardLayout>
       <div className="relative">
         {/* Main Calendar Content */}
-        <div className="pr-[340px]">
+        <div className="lg:pr-[340px]">
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-xl font-semibold text-white">Calendar</h1>
             <button
@@ -103,32 +133,32 @@ export default function CalendarPage() {
               + Add Event
             </button>
           </div>
-          
+
           <div className="space-y-6">
             {/* Section 1: 5-Day Rolling View (40% of viewport) */}
-            <section 
-              className="bg-[#151518] border border-[#27272a] rounded-lg p-4"
-              style={{ minHeight: '40vh' }}
+            <section
+              className="bg-[#151518] border border-[#27272a] rounded-lg p-3 sm:p-4"
+              style={{ minHeight: '30vh' }}
             >
               <h2 className="text-sm font-medium text-[#888888] uppercase tracking-wide mb-4">
                 Next 5 Days
               </h2>
               <FiveDayView />
             </section>
-            
+
             {/* Section 2: Monthly Calendar View (60% of viewport) */}
-            <section className="bg-[#151518] border border-[#27272a] rounded-lg p-4">
+            <section className="bg-[#151518] border border-[#27272a] rounded-lg p-3 sm:p-4">
               <MonthlyView />
             </section>
 
             {/* Section 3: Scheduled Jobs (Cron Jobs) */}
-            <section className="bg-[#151518] border border-[#27272a] rounded-lg p-4">
+            <section className="bg-[#151518] border border-[#27272a] rounded-lg p-3 sm:p-4">
               <h2 className="text-sm font-medium text-[#888888] uppercase tracking-wide mb-4">
                 🤖 Scheduled Jobs
               </h2>
               <div className="space-y-2">
                 {cronJobs.map((job, index) => (
-                  <div 
+                  <div
                     key={index}
                     className="bg-[#0d0d0f] border border-[#27272a] rounded-md p-3 flex items-center gap-3"
                   >
@@ -137,9 +167,9 @@ export default function CalendarPage() {
                       <div className="text-sm font-medium text-[#e8e8e8]">{job.description}</div>
                       <div className="text-xs text-[#888888] mt-0.5">
                         <span className="font-mono bg-[#1a1a1f] px-1.5 py-0.5 rounded">{job.schedule}</span>
-                        <span className="ml-2">Next: {new Date(job.nextRun).toLocaleDateString('en-US', { 
-                          weekday: 'short', 
-                          month: 'short', 
+                        <span className="ml-2">Next: {new Date(job.nextRun).toLocaleDateString('en-US', {
+                          weekday: 'short',
+                          month: 'short',
                           day: 'numeric',
                           hour: 'numeric',
                           minute: '2-digit'
@@ -153,7 +183,7 @@ export default function CalendarPage() {
           </div>
         </div>
 
-        {/* Live Activity Sidebar - Fixed on Right */}
+        {/* Live Activity Sidebar - Desktop only */}
         <div className="fixed top-0 right-0 h-screen w-[340px] z-40 hidden lg:block">
           <LiveActivitySidebar agents={agents} />
         </div>

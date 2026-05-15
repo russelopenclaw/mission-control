@@ -37,6 +37,11 @@ export default function CalendarWidget() {
         // Get today's events and upcoming (next 5 days) using Chicago time
         const todayStr = getChicagoToday();
         const filtered = (data.events || [])
+          .map((e: any) => ({
+            ...e,
+            title: e.summary || e.title || 'Untitled',
+            date: e.start ? e.start.split('T')[0] : e.date,
+          }))
           .filter((e: CalendarEvent) => {
             const d = e.date || (e.start ? e.start.split('T')[0] : null);
             return d && d >= todayStr;
@@ -81,9 +86,9 @@ export default function CalendarWidget() {
   const getTypeIcon = (event: CalendarEvent) => {
     if (event.recurrence) return '🔁';
     if (event.type === 'personal') return '👤';
-    if (event.title.toLowerCase().includes('meeting')) return '👥';
-    if (event.title.toLowerCase().includes('deadline')) return '⚠️';
-    if (event.title.toLowerCase().includes('reminder')) return '🔔';
+    if ((event.title || '').toLowerCase().includes('meeting')) return '👥';
+    if ((event.title || '').toLowerCase().includes('deadline')) return '⚠️';
+    if ((event.title || '').toLowerCase().includes('reminder')) return '🔔';
     return '📅';
   };
 

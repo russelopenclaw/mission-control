@@ -43,22 +43,47 @@ export async function authMiddleware(request: NextRequest) {
     pathname.startsWith('/api/status/') ||
     pathname === '/api/subagents' ||
     pathname.startsWith('/api/subagents/') ||
-    pathname === '/api/agents' ||
-    pathname.startsWith('/api/agents/') ||
-    pathname === '/api/jobs' ||
-    pathname.startsWith('/api/jobs/') ||
-    pathname === '/api/transcriptions' ||
-    pathname.startsWith('/api/transcriptions/') ||
-    pathname === '/api/transcriptions-file' ||
-    pathname.startsWith('/api/transcriptions-file/') ||
     pathname === '/agents' ||
     pathname.startsWith('/agents/') ||
-    pathname === '/jobs' ||
-    pathname.startsWith('/jobs/') ||
+    pathname === '/api/agents' ||
+    pathname.startsWith('/api/agents/') ||
     pathname === '/tasks' ||
     pathname.startsWith('/tasks/') ||
-    pathname === '/transcriptions' ||
-    pathname.startsWith('/transcriptions/')
+    pathname.startsWith('/api/dashboard/') ||
+    pathname === '/api/db-stats' ||
+    pathname.startsWith('/api/db-stats/') ||
+    pathname === '/api/memory' ||
+    pathname.startsWith('/api/memory/') ||
+    pathname === '/api/brain' ||
+    pathname.startsWith('/api/brain/') ||
+    pathname === '/api/calendar' ||
+    pathname === '/api/calendar/events' ||
+    pathname === '/api/events' ||
+    pathname === '/api/activity' ||
+    pathname === '/api/activity/status' ||
+    pathname === '/api/health' ||
+    pathname === '/api/trends' ||
+    pathname === '/api/jobs' ||
+    pathname.startsWith('/api/jobs/') ||
+    pathname.startsWith('/api/calendar/') ||
+    pathname.startsWith('/api/docs') ||
+    pathname.startsWith('/api/plex') ||
+    pathname.startsWith('/api/plex/') ||
+    pathname.startsWith('/api/activity') ||
+    pathname.startsWith('/api/websocket') ||
+    pathname.startsWith('/api/events') ||
+    pathname.startsWith('/api/events/') ||
+    pathname === '/plex' ||
+    pathname === '/trends' ||
+    pathname === '/jobs' ||
+    pathname.startsWith('/jobs/') ||
+    pathname === '/' ||
+    pathname.startsWith('/docs') ||
+    pathname.startsWith('/brain') ||
+    pathname.startsWith('/memory') ||
+    pathname.startsWith('/calendar') ||
+    pathname === '/briefing' ||
+    pathname === '/api/briefing'
   ) {
     return NextResponse.next();
   }

@@ -8,17 +8,10 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Match all request paths except for:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public files (public folder)
-     * - API routes for docs (public access)
-     * - API routes for calendar (public access)
-     * - API routes for brain (public access)
-     * - API routes for subagents (public access)
-     * - Tasks page (public access)
+     * Match all request paths.
+     * The authMiddleware function handles the actual public/protected logic.
+     * Only _next/static, _next/image, and favicon.ico are truly skipped.
      */
-    '/((?!_next/static|_next/image|favicon.ico|/agents.*|/api/agents.*|/jobs.*|/api/jobs.*|/tasks.*|/api/tasks.*|/api/docs.*|/api/calendar.*|/api/brain.*|/api/subagents.*|/transcriptions.*|/api/transcriptions.*|/api/transcriptions-file.*).*)',
+    '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
 };

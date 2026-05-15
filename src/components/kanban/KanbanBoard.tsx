@@ -5,7 +5,7 @@ import React, { useState } from 'react';
 interface Task {
   id: string;
   title: string;
-  column: 'backlog' | 'in-progress' | 'review' | 'done';
+  column: 'BACKLOG' | 'READY' | 'IN_PROGRESS' | 'VALIDATION' | 'DONE' | 'BLOCKED';
   assignee: string;
   priority: 'low' | 'medium' | 'high';
   createdAt: string;
@@ -14,15 +14,17 @@ interface Task {
 
 interface KanbanBoardProps {
   tasks: Task[];
-  onMoveTask: (taskId: string, newColumn: 'backlog' | 'in-progress' | 'review' | 'done') => void;
+  onMoveTask: (taskId: string, newColumn: 'BACKLOG' | 'READY' | 'IN_PROGRESS' | 'VALIDATION' | 'DONE' | 'BLOCKED') => void;
   onTaskClick: (task: Task) => void;
 }
 
-const COLUMNS: { id: 'backlog' | 'in-progress' | 'review' | 'done'; title: string; color: string }[] = [
-  { id: 'backlog', title: 'Backlog', color: '#71717a' },
-  { id: 'in-progress', title: 'In Progress', color: '#5e6ad2' },
-  { id: 'review', title: 'Review', color: '#f59e0b' },
-  { id: 'done', title: 'Done', color: '#22c55e' }
+const COLUMNS: { id: 'BACKLOG' | 'READY' | 'IN_PROGRESS' | 'VALIDATION' | 'DONE' | 'BLOCKED'; title: string; color: string; description: string }[] = [
+  { id: 'BACKLOG', title: 'Backlog', color: '#71717a', description: 'Ideas & future work' },
+  { id: 'READY', title: 'Ready', color: '#0ea5e9', description: 'Ready to start' },
+  { id: 'IN_PROGRESS', title: 'In Progress', color: '#5e6ad2', description: 'Active work' },
+  { id: 'VALIDATION', title: 'Validation', color: '#f59e0b', description: 'Testing & review' },
+  { id: 'DONE', title: 'Done', color: '#22c55e', description: 'Completed' },
+  { id: 'BLOCKED', title: 'Blocked', color: '#ef4444', description: 'Blocked issues' }
 ];
 
 export default function KanbanBoard({ tasks, onMoveTask, onTaskClick }: KanbanBoardProps) {
@@ -42,9 +44,9 @@ export default function KanbanBoard({ tasks, onMoveTask, onTaskClick }: KanbanBo
 }
 
 interface ColumnProps {
-  column: { id: 'backlog' | 'in-progress' | 'review' | 'done'; title: string; color: string };
+  column: { id: 'BACKLOG' | 'READY' | 'IN_PROGRESS' | 'VALIDATION' | 'DONE' | 'BLOCKED'; title: string; color: string; description: string };
   tasks: Task[];
-  onMoveTask: (taskId: string, newColumn: 'backlog' | 'in-progress' | 'review' | 'done') => void;
+  onMoveTask: (taskId: string, newColumn: 'BACKLOG' | 'READY' | 'IN_PROGRESS' | 'VALIDATION' | 'DONE' | 'BLOCKED') => void;
   onTaskClick: (task: Task) => void;
 }
 
@@ -57,7 +59,10 @@ function Column({ column, tasks, onMoveTask, onTaskClick }: ColumnProps) {
       {/* Column Header */}
       <div className="p-3 border-b border-[#27272a]">
         <div className="flex items-center justify-between">
-          <h3 className="font-medium text-[#e8e8e8] text-sm">{column.title}</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="font-medium text-[#e8e8e8] text-sm">{column.title}</h3>
+            <span className="text-[10px] text-[#71717a]">{column.description}</span>
+          </div>
           <span 
             className="text-xs text-[#888888] bg-[#0d0d0f] px-2 py-0.5 rounded"
             style={{ borderColor: column.color, borderWidth: '1px' }}
@@ -91,7 +96,7 @@ function Column({ column, tasks, onMoveTask, onTaskClick }: ColumnProps) {
 
 interface TaskCardProps {
   task: Task;
-  onMoveTask: (taskId: string, newColumn: 'backlog' | 'in-progress' | 'review' | 'done') => void;
+  onMoveTask: (taskId: string, newColumn: 'BACKLOG' | 'READY' | 'IN_PROGRESS' | 'VALIDATION' | 'DONE' | 'BLOCKED') => void;
   onTaskClick: (task: Task) => void;
   allColumns: string[];
 }
@@ -114,7 +119,6 @@ function TaskCard({ task, onMoveTask, onTaskClick, allColumns }: TaskCardProps) 
     switch (assignee.toLowerCase()) {
       case 'kevin': return 'bg-[#5e6ad2]';
       case 'alfred': return 'bg-[#22c55e]';
-      case 'jeeves': return 'bg-[#f59e0b]';
       default: return 'bg-[#71717a]';
     }
   };
@@ -124,7 +128,7 @@ function TaskCard({ task, onMoveTask, onTaskClick, allColumns }: TaskCardProps) 
       ? Math.max(0, currentColumnIndex - 1)
       : Math.min(allColumns.length - 1, currentColumnIndex + 1);
     
-    const newColumn = allColumns[newIndex] as 'backlog' | 'in-progress' | 'review' | 'done';
+    const newColumn = allColumns[newIndex] as 'BACKLOG' | 'READY' | 'IN_PROGRESS' | 'VALIDATION' | 'DONE' | 'BLOCKED';
     onMoveTask(task.id, newColumn);
     setShowMoveMenu(false);
   };

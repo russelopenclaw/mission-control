@@ -19,13 +19,63 @@ export default function FiveDayView() {
 
   useEffect(() => {
     fetchFiveDayData();
+    
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(() => {
+      fetchFiveDayData();
+    }, 30000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   const fetchFiveDayData = async () => {
     try {
-      const res = await fetch('/api/calendar/5day');
+      const now = new Date();
+      const fiveDaysFromNow = new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000);
+      
+      const res = await fetch(
+        `/api/calendar/events?from=${now.toISOString()}&to=${fiveDaysFromNow.toISOString()}`
+      );
       const data = await res.json();
-      setDays(data.days || []);
+      
+      // Transform Google Calendar events into DayData format
+      const daysData: DayData[] = [];
+      
+      for (let i = 0; i < 5; i++) {
+        const date = new Date(now.getTime() + i * 24 * 60 * 60 * 1000);
+        const dateStr = date.toLocaleDateString('en-CA'); // YYYY-MM-DD in local timezone
+        const dayEvents = (data.events || []).filter((event: any) => {
+          // Convert event start to local date for comparison
+          const eventStartDate = event.start ? new Date(event.start) : null;
+          if (!eventStartDate) return false;
+          const eventDateStr = eventStartDate.toLocaleDateString('en-CA'); // YYYY-MM-DD format
+          return eventDateStr === dateStr;
+        });
+        
+        daysData.push({
+          date: dateStr,
+          dayName: date.toLocaleDateString('en-US', { weekday: 'long' }),
+          dayNumber: date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' }),
+          isToday: i === 0,
+          events: dayEvents.map((event: any) => {
+            // API returns start/end as ISO strings, not nested objects
+            const startTime = event.start ? new Date(event.start).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : null;
+            const endTime = event.end ? new Date(event.end).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : null;
+            return {
+              id: event.id,
+              title: event.summary || 'Untitled',
+              date: dateStr,
+              startTime: event.allDay ? null : startTime,
+              endTime: event.allDay ? null : endTime,
+              type: event.allDay ? 'all-day' : (event.recurring ? 'personal' : 'meeting'),
+              location: event.location || null,
+              description: event.description || null,
+            };
+          }),
+        });
+      }
+      
+      setDays(daysData);
       setIsLoading(false);
     } catch (error) {
       console.error('Failed to fetch 5-day calendar:', error);
@@ -46,16 +96,12 @@ export default function FiveDayView() {
   }
 
   return (
-    <div className="w-full overflow-x-auto">
-      <div className="flex gap-4 min-w-max pb-2">
+    <div className="w-full">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
         {days.map((day) => (
           <div
             key={day.date}
-            className={`flex-shrink-0 w-[320px] rounded-lg border ${
-              day.isToday
-                ? 'bg-[#1a1a1e] border-[#5e6ad2]/40'
-                : 'bg-[#0d0d0f] border-[#27272a]'
-            }`}
+            className={`rounded-lg border ${day.isToday ? 'bg-[#1a1a1e] border-[#5e6ad2]/40' : 'bg-[#0d0d0f] border-[#27272a]'}`}
           >
             {/* Day Header */}
             <div className={`p-4 border-b ${day.isToday ? 'border-[#5e6ad2]/20' : 'border-[#27272a]'}`}>
@@ -78,7 +124,7 @@ export default function FiveDayView() {
             </div>
 
             {/* Events List */}
-            <div className="p-3 max-h-[280px] overflow-y-auto">
+            <div className="p-3 max-h-[220px] sm:max-h-[280px] overflow-y-auto">
               {day.events.length === 0 ? (
                 <div className="flex items-center justify-center py-8">
                   <p className="text-xs text-[#525252]">No events scheduled</p>

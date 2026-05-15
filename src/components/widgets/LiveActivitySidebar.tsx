@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useWebSocket } from '@/lib/websocket/useWebSocket';
 
 interface AgentStatusData {
   status: 'working' | 'idle';
@@ -32,6 +33,18 @@ export default function LiveActivitySidebar({ agents }: LiveActivitySidebarProps
   const [expandedSubagent, setExpandedSubagent] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  
+  // WebSocket integration for real-time updates
+  const { connected, lastMessage } = useWebSocket({
+    channels: ['agents', 'tasks', 'subagents'],
+    onConnect: () => {
+      console.log('[LiveActivitySidebar] WebSocket connected');
+    },
+    onMessage: (message) => {
+      // Update last update timestamp on any WebSocket message
+      setLastUpdate(new Date());
+    },
+  });
 
   // Collapse by default on mobile
   useEffect(() => {
@@ -64,6 +77,25 @@ export default function LiveActivitySidebar({ agents }: LiveActivitySidebarProps
     // Update timestamp whenever agents data changes
     setLastUpdate(new Date());
   }, [agents]);
+
+  // WebSocket real-time updates
+  useEffect(() => {
+    if (lastMessage) {
+      setLastUpdate(new Date());
+      
+      // Handle different message types
+      if (lastMessage.channel === 'agents' && lastMessage.data?.agent) {
+        // Agent status updated - would update the agents prop from parent
+      }
+      if (lastMessage.channel === 'tasks' && lastMessage.data?.taskId) {
+        // Task updated
+      }
+      if (lastMessage.channel === 'subagents') {
+        // Subagent activity - trigger refresh
+        fetchSubagents();
+      }
+    }
+  }, [lastMessage]);
 
   useEffect(() => {
     // Fetch subagents on mount
@@ -137,7 +169,16 @@ export default function LiveActivitySidebar({ agents }: LiveActivitySidebarProps
             Live Activity
           </h2>
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
+          {/* WebSocket Status Indicator */}
+          <div 
+            className={`w-2 h-2 rounded-full transition-all ${
+              connected 
+                ? 'bg-[#22c55e] animate-pulse' 
+                : 'bg-[#eab308]'
+            }`}
+            title={connected ? 'WebSocket Connected' : 'WebSocket Disconnected (polling fallback)'}
+          />
           <div className="w-2 h-2 bg-[#22c55e] rounded-full animate-pulse"></div>
           <span className="text-[10px] text-[#525252]">
             {getRelativeTime(lastUpdate.toISOString())}
@@ -288,9 +329,13 @@ export default function LiveActivitySidebar({ agents }: LiveActivitySidebarProps
 
       {/* Footer - Fixed at bottom */}
       <div className="p-3 border-t border-[#27272a] bg-[#151518] flex-shrink-0">
-        <p className="text-[10px] text-[#525252] text-center">
-          Updates every 10 seconds
-        </p>
+        <div className="flex items-center justify-center gap-2">
+          <span className={`text-[10px] ${connected ? 'text-[#22c55e]' : 'text-[#eab308]'}`}>
+            {connected ? 'WebSocket Live' : 'Polling Fallback'}
+          </span>
+          <span className="text-[10px] text-[#525252]">|</span>
+          <span className="text-[10px] text-[#525252]">Updates every 10 seconds</span>
+        </div>
       </div>
     </div>
   );
