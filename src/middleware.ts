@@ -19,6 +19,6 @@ export const config = {
      * - API routes for subagents (public access)
      * - Tasks page (public access)
      */
-    '/((?!_next/static|_next/image|favicon.ico|/agents.*|/api/agents.*|/tasks.*|/api/tasks.*|/api/docs.*|/api/calendar.*|/api/brain.*|/api/subagents.*).*)',
+    '/((?!_next/static|_next/image|favicon.ico|/agents.*|/api/agents.*|/jobs.*|/api/jobs.*|/tasks.*|/api/tasks.*|/api/docs.*|/api/calendar.*|/api/brain.*|/api/subagents.*|/transcriptions.*|/api/transcriptions.*|/api/transcriptions-file.*).*)',
   ],
 };

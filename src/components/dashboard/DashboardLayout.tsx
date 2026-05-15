@@ -20,6 +20,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { href: '/memory', label: 'Memory', icon: '💭' },
     { href: '/calendar', label: 'Calendar', icon: '📅' },
     { href: '/docs', label: 'Docs', icon: '📚' },
+    { href: '/jobs', label: 'Jobs', icon: '💼' },
+    { href: '/transcriptions', label: 'Transcriptions', icon: '🎙️' },
   ];
   
   return (
