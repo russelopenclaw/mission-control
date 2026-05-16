@@ -18,6 +18,7 @@ const pageTitles: Record<string, string> = {
   '/plex': 'Plex',
   '/trends': 'Trends',
   '/jobs': 'Jobs',
+  '/transcriptions': 'Transcriptions',
 };
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
@@ -36,6 +37,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { href: '/plex', label: 'Plex', icon: '🎬' },
     { href: '/trends', label: 'Trends', icon: '🔥' },
     { href: '/jobs', label: 'Jobs', icon: '💼' },
+    { href: '/transcriptions', label: 'Transcriptions', icon: '🎙️' },
   ];
 
   const sidebarWidth = sidebarCollapsed ? 'w-16' : 'w-64';

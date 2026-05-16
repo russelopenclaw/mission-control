@@ -83,7 +83,11 @@ export async function authMiddleware(request: NextRequest) {
     pathname.startsWith('/memory') ||
     pathname.startsWith('/calendar') ||
     pathname === '/briefing' ||
-    pathname === '/api/briefing'
+    pathname === '/api/briefing' ||
+    pathname.startsWith('/api/transcriptions') ||
+    pathname.startsWith('/api/transcriptions-file') ||
+    pathname === '/transcriptions' ||
+    pathname.startsWith('/transcriptions/')
   ) {
     return NextResponse.next();
   }
