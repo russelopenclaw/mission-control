@@ -54,6 +54,9 @@ export default function TranscriptionsPage() {
   const [expandedFile, setExpandedFile] = useState<string | null>(null);
   const [fullText, setFullText] = useState<string>('');
   const [loadingText, setLoadingText] = useState(false);
+  const [videoUrl, setVideoUrl] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
     fetchTranscriptions();
@@ -68,10 +71,40 @@ export default function TranscriptionsPage() {
         setError(data.error);
       }
       setTranscriptions(data.transcriptions || []);
-    } catch (err) {
+    } catch {
       setError('Failed to load transcriptions');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleSubmitUrl(e: React.FormEvent) {
+    e.preventDefault();
+    if (!videoUrl.trim()) return;
+
+    setSubmitting(true);
+    setSubmitMessage(null);
+
+    try {
+      const res = await fetch('/api/transcriptions-queue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: videoUrl.trim() }),
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        setSubmitMessage({ type: 'success', text: data.message || 'Video transcribed successfully' });
+        setVideoUrl('');
+        // Refresh the transcriptions list to show the new one
+        await fetchTranscriptions();
+      } else {
+        setSubmitMessage({ type: 'error', text: data.error || data.details || 'Failed to transcribe video' });
+      }
+    } catch {
+      setSubmitMessage({ type: 'error', text: 'Failed to process video URL' });
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -118,7 +151,6 @@ export default function TranscriptionsPage() {
     setExpandedFile(t.filename);
     setLoadingText(true);
     try {
-      // Prefer readable format if available
       const fileToFetch = t.readableFilename || t.filename;
       const res = await fetch(`/api/transcriptions-file?file=${encodeURIComponent(fileToFetch)}`);
       if (res.ok) {
@@ -136,25 +168,17 @@ export default function TranscriptionsPage() {
 
   function renderMarkdown(text: string): string {
     let html = text;
-    // Escape HTML
     html = html.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    // Headers
     html = html.replace(/^(### .+)$/gm, '<h3 class="text-base font-semibold text-[#d4d4d8] mt-3 mb-1">$1</h3>').replace(/^### /gm, '');
     html = html.replace(/^(## .+)$/gm, '<h2 class="text-lg font-semibold text-[#e8e8e8] mt-4 mb-1">$1</h2>').replace(/^## /gm, '');
     html = html.replace(/^(# .+)$/gm, '<h1 class="text-xl font-bold text-[#22c55e] mt-4 mb-2">$1</h1>').replace(/^# /gm, '');
-    // Bold
     html = html.replace(/\*\*(.+?)\*\*/g, '<strong class="text-[#4ade80]">$1</strong>');
-    // Italic
     html = html.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>');
-    // Links
     html = html.replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank" rel="noopener" class="text-[#3b82f6] hover:underline">$1</a>');
-    // Horizontal rules
     html = html.replace(/^---$/gm, '<hr class="border-[#27272a] my-3" />');
-    // Paragraphs
     html = html.replace(/\n\n/g, '</p><p class="mb-2">');
     html = html.replace(/\n/g, '<br/>');
     html = `<p class="mb-2">${html}</p>`;
-    // Cleanup
     html = html.replace(/<p class="mb-2"><\/p>/g, '');
     html = html.replace(/<p class="mb-2">(<h[123])/g, '$1');
     html = html.replace(/(<\/h[123]>)<\/p>/g, '$1');
@@ -176,12 +200,51 @@ export default function TranscriptionsPage() {
               🎙️ Transcriptions
             </h1>
             <p className="text-sm text-[#888888] mt-1">
-              Voice meeting transcriptions powered by local Whisper
+              Video and audio transcriptions
             </p>
           </div>
           <div className="text-xs text-[#71717a]">
             {transcriptions.length} file{transcriptions.length !== 1 ? 's' : ''}
           </div>
+        </div>
+
+        {/* Add Video URL Section */}
+        <div className="bg-[#151518] border border-[#27272a] rounded-lg p-4 mb-6">
+          <h2 className="text-sm font-medium text-[#a1a1a1] mb-3 flex items-center gap-2">
+            <span>🔗</span> Transcribe a Video
+          </h2>
+          <form onSubmit={handleSubmitUrl} className="flex gap-2">
+            <input
+              type="url"
+              value={videoUrl}
+              onChange={(e) => {
+                setVideoUrl(e.target.value);
+                setSubmitMessage(null);
+              }}
+              placeholder="Paste YouTube or Vimeo URL..."
+              className="flex-1 bg-[#0d0d0f] border border-[#27272a] rounded-lg px-3 py-2 text-sm text-[#e8e8e8] placeholder-[#525252] focus:outline-none focus:border-[#22c55e]/50 transition-colors"
+              disabled={submitting}
+            />
+            <button
+              type="submit"
+              disabled={submitting || !videoUrl.trim()}
+              className="px-4 py-2 bg-[#22c55e]/10 border border-[#22c55e]/30 rounded-lg text-sm text-[#22c55e] hover:bg-[#22c55e]/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-2 whitespace-nowrap"
+            >
+              {submitting ? (
+                <>
+                  <div className="animate-spin w-3 h-3 border border-[#22c55e] border-t-transparent rounded-full"></div>
+                  Transcribing...
+                </>
+              ) : (
+                <>Transcribe</>
+              )}
+            </button>
+          </form>
+          {submitMessage && (
+            <p className={`text-xs mt-2 ${submitMessage.type === 'success' ? 'text-[#22c55e]' : 'text-red-400'}`}>
+              {submitMessage.type === 'success' ? '✓' : '✕'} {submitMessage.text}
+            </p>
+          )}
         </div>
 
         {error && (
@@ -200,8 +263,8 @@ export default function TranscriptionsPage() {
             <div className="text-4xl mb-4">🎙️</div>
             <h2 className="text-lg font-medium text-[#e8e8e8] mb-2">No transcriptions yet</h2>
             <p className="text-sm text-[#888888] max-w-md mx-auto">
-              Send an audio file to Alfred via Telegram and it will be transcribed automatically. 
-              Transcriptions appear here once processed.
+              Paste a YouTube or Vimeo URL above to transcribe a video.
+              Transcriptions will appear here once processed.
             </p>
           </div>
         ) : (
@@ -214,7 +277,6 @@ export default function TranscriptionsPage() {
                 <div className="p-4">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 min-w-0">
-                      {/* Name - editable */}
                       {editingFile === t.filename ? (
                         <div className="flex items-center gap-2 mb-1">
                           <input
@@ -228,34 +290,19 @@ export default function TranscriptionsPage() {
                             className="bg-[#0d0d0f] border border-[#22c55e]/30 text-[#e8e8e8] rounded px-2 py-1 text-sm w-full focus:outline-none focus:border-[#22c55e]"
                             autoFocus
                           />
-                          <button
-                            onClick={() => handleRename(t.filename)}
-                            className="text-[#22c55e] hover:text-[#4ade80] text-sm px-2"
-                          >
-                            ✓
-                          </button>
-                          <button
-                            onClick={() => setEditingFile(null)}
-                            className="text-[#888888] hover:text-[#e8e8e8] text-sm px-2"
-                          >
-                            ✕
-                          </button>
+                          <button onClick={() => handleRename(t.filename)} className="text-[#22c55e] hover:text-[#4ade80] text-sm px-2">✓</button>
+                          <button onClick={() => setEditingFile(null)} className="text-[#888888] hover:text-[#e8e8e8] text-sm px-2">✕</button>
                         </div>
                       ) : (
                         <div
                           className="flex items-center gap-2 mb-1 cursor-pointer group"
                           onClick={() => startEditing(t.filename, t.displayName)}
                         >
-                          <h3 className="text-[#e8e8e8] font-medium truncate">
-                            {t.displayName}
-                          </h3>
-                          <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[#888888] text-xs">
-                            ✏️
-                          </span>
+                          <h3 className="text-[#e8e8e8] font-medium truncate">{t.displayName}</h3>
+                          <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[#888888] text-xs">✏️</span>
                         </div>
                       )}
 
-                      {/* Meta info */}
                       <div className="flex flex-wrap items-center gap-3 text-xs text-[#71717a]">
                         <span>{formatDate(t.createdAt)}</span>
                         <span>{formatFileSize(t.size)}</span>
@@ -264,15 +311,11 @@ export default function TranscriptionsPage() {
                         {t.model && <span>🤖 {t.model}</span>}
                       </div>
 
-                      {/* Preview text */}
                       {t.textPreview && (
-                        <p className="text-xs text-[#555555] mt-2 truncate">
-                          {t.textPreview}
-                        </p>
+                        <p className="text-xs text-[#555555] mt-2 truncate">{t.textPreview}</p>
                       )}
                     </div>
 
-                    {/* Actions */}
                     <div className="flex items-center gap-2 flex-shrink-0">
                       {t.readableFilename && (
                         <a
@@ -300,7 +343,6 @@ export default function TranscriptionsPage() {
                   </div>
                 </div>
 
-                {/* Expanded content */}
                 {expandedFile === t.filename && (
                   <div className="border-t border-[#27272a] bg-[#0d0d0f] p-4">
                     {loadingText ? (
