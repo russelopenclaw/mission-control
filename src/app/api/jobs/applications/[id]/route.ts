@@ -23,6 +23,11 @@ export async function PATCH(
       }
     }
 
+    // Auto-set applied_date when status changes to 'applied' or beyond
+    if (body.status && ['applied', 'phone_screen', 'interview', 'offer'].includes(body.status)) {
+      updates.push(`applied_date = COALESCE(applied_date, NOW())`);
+    }
+
     if (updates.length === 0) {
       return NextResponse.json(
         { error: true, errorMessage: 'No valid fields to update' },

@@ -63,6 +63,7 @@ export async function authMiddleware(request: NextRequest) {
     pathname === '/api/activity/status' ||
     pathname === '/api/health' ||
     pathname === '/api/trends' ||
+    pathname.startsWith('/api/todos') ||
     pathname === '/api/jobs' ||
     pathname.startsWith('/api/jobs/') ||
     pathname.startsWith('/api/calendar/') ||

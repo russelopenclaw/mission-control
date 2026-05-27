@@ -44,11 +44,14 @@ export async function POST(request: NextRequest) {
     }
 
     const id = `job-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+    // Auto-set applied_date when status is 'applied' or higher
+    const appliedDate = (status === 'applied' || status === 'phone_screen' || status === 'interview' || status === 'offer')
+      ? new Date().toISOString() : null;
     const result = await query(
-      `INSERT INTO job_applications (id, title, company, location, url, source, salary_range, notes, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      `INSERT INTO job_applications (id, title, company, location, url, source, salary_range, notes, status, applied_date)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
        RETURNING *`,
-      [id, title, company, location || null, url || null, source || null, salary_range || null, notes || null, status || 'interested']
+      [id, title, company, location || null, url || null, source || null, salary_range || null, notes || null, status || 'interested', appliedDate]
     );
 
     return NextResponse.json({ application: result.rows[0] }, { status: 201 });

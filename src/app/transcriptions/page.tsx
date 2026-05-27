@@ -109,16 +109,18 @@ export default function TranscriptionsPage() {
     }
   }
 
-  async function handleExpand(filename: string) {
-    if (expandedFile === filename) {
+  async function handleExpand(t: Transcription) {
+    if (expandedFile === t.filename) {
       setExpandedFile(null);
       setFullText('');
       return;
     }
-    setExpandedFile(filename);
+    setExpandedFile(t.filename);
     setLoadingText(true);
     try {
-      const res = await fetch(`/api/transcriptions-file?file=${encodeURIComponent(filename)}`);
+      // Prefer readable format if available
+      const fileToFetch = t.readableFilename || t.filename;
+      const res = await fetch(`/api/transcriptions-file?file=${encodeURIComponent(fileToFetch)}`);
       if (res.ok) {
         const data = await res.json();
         setFullText(data.text || 'No content');
@@ -130,6 +132,34 @@ export default function TranscriptionsPage() {
     } finally {
       setLoadingText(false);
     }
+  }
+
+  function renderMarkdown(text: string): string {
+    let html = text;
+    // Escape HTML
+    html = html.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    // Headers
+    html = html.replace(/^(### .+)$/gm, '<h3 class="text-base font-semibold text-[#d4d4d8] mt-3 mb-1">$1</h3>').replace(/^### /gm, '');
+    html = html.replace(/^(## .+)$/gm, '<h2 class="text-lg font-semibold text-[#e8e8e8] mt-4 mb-1">$1</h2>').replace(/^## /gm, '');
+    html = html.replace(/^(# .+)$/gm, '<h1 class="text-xl font-bold text-[#22c55e] mt-4 mb-2">$1</h1>').replace(/^# /gm, '');
+    // Bold
+    html = html.replace(/\*\*(.+?)\*\*/g, '<strong class="text-[#4ade80]">$1</strong>');
+    // Italic
+    html = html.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>');
+    // Links
+    html = html.replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank" rel="noopener" class="text-[#3b82f6] hover:underline">$1</a>');
+    // Horizontal rules
+    html = html.replace(/^---$/gm, '<hr class="border-[#27272a] my-3" />');
+    // Paragraphs
+    html = html.replace(/\n\n/g, '</p><p class="mb-2">');
+    html = html.replace(/\n/g, '<br/>');
+    html = `<p class="mb-2">${html}</p>`;
+    // Cleanup
+    html = html.replace(/<p class="mb-2"><\/p>/g, '');
+    html = html.replace(/<p class="mb-2">(<h[123])/g, '$1');
+    html = html.replace(/(<\/h[123]>)<\/p>/g, '$1');
+    html = html.replace(/<p class="mb-2">(<hr)/g, '$1');
+    return html;
   }
 
   function startEditing(filename: string, currentName: string) {
@@ -246,7 +276,7 @@ export default function TranscriptionsPage() {
                     <div className="flex items-center gap-2 flex-shrink-0">
                       {t.readableFilename && (
                         <a
-                          href={`/api/transcriptions-file?file=${encodeURIComponent(t.readableFilename)}`}
+                          href={`/api/transcriptions-file?file=${encodeURIComponent(t.readableFilename)}&format=html`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-xs px-3 py-1.5 bg-[#0d0d0f] border border-[#22c55e]/30 rounded hover:border-[#22c55e] text-[#22c55e] transition-colors"
@@ -255,7 +285,7 @@ export default function TranscriptionsPage() {
                         </a>
                       )}
                       <button
-                        onClick={() => handleExpand(t.filename)}
+                        onClick={() => handleExpand(t)}
                         className="text-xs px-3 py-1.5 bg-[#0d0d0f] border border-[#27272a] rounded hover:border-[#22c55e]/50 hover:text-[#22c55e] text-[#888888] transition-colors"
                       >
                         {expandedFile === t.filename ? 'Collapse' : 'View'}
@@ -279,9 +309,18 @@ export default function TranscriptionsPage() {
                         <span className="ml-2 text-[#888888] text-sm">Loading...</span>
                       </div>
                     ) : (
-                      <pre className="text-sm text-[#e8e8e8] whitespace-pre-wrap font-mono leading-relaxed max-h-96 overflow-y-auto">
-                        {fullText}
-                      </pre>
+                      <>
+                        {t.readableFilename ? (
+                          <div
+                            className="text-sm text-[#e8e8e8] leading-relaxed max-h-96 overflow-y-auto prose-invert"
+                            dangerouslySetInnerHTML={{ __html: renderMarkdown(fullText) }}
+                          />
+                        ) : (
+                          <pre className="text-sm text-[#e8e8e8] whitespace-pre-wrap font-mono leading-relaxed max-h-96 overflow-y-auto">
+                            {fullText}
+                          </pre>
+                        )}
+                      </>
                     )}
                   </div>
                 )}

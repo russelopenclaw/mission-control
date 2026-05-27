@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import SidebarNav from './SidebarNav';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -26,19 +26,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const pageTitle = pageTitles[pathname] || 'Mission Control';
-  
-  const navItems = [
-    { href: '/', label: 'Home', icon: '🏠' },
-    { href: '/brain', label: 'Brain', icon: '🧠' },
-    { href: '/memory', label: 'Memory', icon: '💭' },
-    { href: '/calendar', label: 'Calendar', icon: '📅' },
-    { href: '/docs', label: 'Docs', icon: '📚' },
-    { href: '/briefing', label: 'Briefing', icon: '☀️' },
-    { href: '/plex', label: 'Plex', icon: '🎬' },
-    { href: '/trends', label: 'Trends', icon: '🔥' },
-    { href: '/jobs', label: 'Jobs', icon: '💼' },
-    { href: '/transcriptions', label: 'Transcriptions', icon: '🎙️' },
-  ];
 
   const sidebarWidth = sidebarCollapsed ? 'w-16' : 'w-64';
   const mainMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
@@ -63,8 +50,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       </header>
       
       {/* Sidebar */}
-      <aside className={`fixed top-0 left-0 h-full ${sidebarWidth} bg-[#151518] border-r border-[#27272a] z-40 transform transition-all duration-300 lg:translate-x-0 ${showMobileMenu ? 'translate-x-0' : '-translate-x-full'}`}>
-        <div className={`p-4 flex items-center ${sidebarCollapsed ? 'justify-center' : 'justify-between'}`}>
+      <aside className={`fixed top-0 left-0 h-full ${sidebarWidth} bg-[#151518] border-r border-[#27272a] z-40 transform transition-all duration-300 lg:translate-x-0 flex flex-col ${showMobileMenu ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className={`p-4 flex items-center shrink-0 ${sidebarCollapsed ? 'justify-center' : 'justify-between'}`}>
           {!sidebarCollapsed && (
             <div>
               <h1 className="text-lg font-bold text-[#e8e8e8]">🦞 Mission Control</h1>
@@ -82,28 +69,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </button>
         </div>
         
-        <nav className="mt-2 px-2">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex items-center ${sidebarCollapsed ? 'justify-center' : ''} px-3 py-2.5 rounded-lg mb-1 transition-colors ${
-                pathname === item.href
-                  ? 'bg-[#22c55e]/10 text-[#22c55e] border border-[#22c55e]/20'
-                  : 'text-[#a1a1a1] hover:bg-[#27272a] hover:text-[#e8e8e8] border border-transparent'
-              }`}
-              onClick={() => setShowMobileMenu(false)}
-              title={sidebarCollapsed ? item.label : undefined}
-            >
-              <span className="text-lg">{item.icon}</span>
-              {!sidebarCollapsed && <span className="ml-3 text-sm">{item.label}</span>}
-            </Link>
-          ))}
-        </nav>
+        <SidebarNav collapsed={sidebarCollapsed} />
         
         {/* Status indicator */}
         {!sidebarCollapsed && (
-          <div className="absolute bottom-6 left-4 right-4 p-3 bg-[#0d0d0f] rounded-lg border border-[#27272a]">
+          <div className="shrink-0 p-3 mx-2 mb-2 bg-[#0d0d0f] rounded-lg border border-[#27272a]">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-[#22c55e] animate-pulse"></div>
               <span className="text-xs text-[#71717a]">Live: PostgreSQL</span>
@@ -111,7 +81,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
         )}
         {sidebarCollapsed && (
-          <div className="absolute bottom-6 left-0 right-0 flex justify-center">
+          <div className="shrink-0 flex justify-center pb-4">
             <div className="w-2 h-2 rounded-full bg-[#22c55e] animate-pulse" title="Live"></div>
           </div>
         )}

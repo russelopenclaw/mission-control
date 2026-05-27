@@ -304,7 +304,12 @@ export default function JobsPage() {
                                 {statusLabels[app.status]}
                               </span>
                             </div>
-                            {app.location && <div className="text-xs text-[#525252] mb-2">{app.location}</div>}
+                            {app.location && <div className="text-xs text-[#525252] mb-1">📍 {app.location}</div>}
+                            {(app.applied_date || app.updated_at) && (
+                              <div className="text-xs text-[#525252] mb-2">
+                                📅 Applied {new Date(app.applied_date || app.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                              </div>
+                            )}
                             {app.url && (
                               <a href={app.url} target="_blank" rel="noopener noreferrer" className="text-xs text-[#5e6ad2] hover:underline block mb-3 truncate">
                                 View posting →

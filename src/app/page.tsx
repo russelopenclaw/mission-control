@@ -3,9 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import WhatsHappening from '@/components/widgets/WhatsHappening';
+import TodoWidget from '@/components/widgets/TodoWidget';
 import CalendarWidget from '@/components/widgets/CalendarWidget';
 import ActivityFeed from '@/components/widgets/ActivityFeed';
-import ErrorDigest from '@/components/widgets/ErrorDigest';
+import SubagentHealthMonitor from '@/components/widgets/SubagentHealthMonitor';
 import HealthStatus from '@/components/widgets/HealthStatus';
 import PlexActivity from '@/components/widgets/PlexActivity';
 import useKeyboardShortcuts from '@/hooks/useKeyboardShortcuts';
@@ -54,26 +55,35 @@ export default function Home() {
   return (
     <DashboardLayout>
       <div className="relative">
-        {/* Primary: What's happening now */}
+        {/* Primary: To Do - always visible at top */}
+        <div className="mb-4">
+          <TodoWidget />
+        </div>
+
+        {/* Secondary: What's happening now */}
         <div className="mb-4">
           <WhatsHappening />
         </div>
 
-        {/* Secondary: Calendar + Activity (side by side) */}
+        {/* Tertiary: Calendar + Activity (side by side) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
           <CalendarWidget />
           <ActivityFeed />
         </div>
 
-        {/* Tertiary: Health + Errors */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+        {/* Quaternary: Health */}
+        <div className="mb-4">
           <HealthStatus />
+        </div>
+
+        {/* Quaternary: Plex + Errors */}
+        <div className="mb-4">
           <PlexActivity />
         </div>
 
-        {/* Quaternary: Errors */}
+        {/* Quaternary: Subagent Monitor */}
         <div className="mb-4">
-          <ErrorDigest />
+          <SubagentHealthMonitor />
         </div>
       </div>
 
