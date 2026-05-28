@@ -35,7 +35,6 @@ const defaultNavItems: NavItem[] = [
   { href: '/docs', label: 'Docs', icon: '📚' },
   { href: '/briefing', label: 'Briefing', icon: '☀️' },
   { href: '/plex', label: 'Plex', icon: '🎬' },
-  { href: '/trends', label: 'Trends', icon: '🔥' },
   { href: '/jobs', label: 'Jobs', icon: '💼' },
   { href: '/transcriptions', label: 'Transcriptions', icon: '🎙️' },
 ];

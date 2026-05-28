@@ -62,7 +62,6 @@ export async function authMiddleware(request: NextRequest) {
     pathname === '/api/activity' ||
     pathname === '/api/activity/status' ||
     pathname === '/api/health' ||
-    pathname === '/api/trends' ||
     pathname.startsWith('/api/todos') ||
     pathname === '/api/jobs' ||
     pathname.startsWith('/api/jobs/') ||
@@ -75,7 +74,6 @@ export async function authMiddleware(request: NextRequest) {
     pathname.startsWith('/api/events') ||
     pathname.startsWith('/api/events/') ||
     pathname === '/plex' ||
-    pathname === '/trends' ||
     pathname === '/jobs' ||
     pathname.startsWith('/jobs/') ||
     pathname === '/' ||
