@@ -54,6 +54,7 @@ export default function TranscriptionsPage() {
   const [expandedFile, setExpandedFile] = useState<string | null>(null);
   const [fullText, setFullText] = useState<string>('');
   const [loadingText, setLoadingText] = useState(false);
+  const [viewMode, setViewMode] = useState<'raw' | 'readable'>('raw');
   const [videoUrl, setVideoUrl] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -149,9 +150,14 @@ export default function TranscriptionsPage() {
       return;
     }
     setExpandedFile(t.filename);
+    setViewMode('raw');
+    await loadTranscriptionText(t, 'raw');
+  }
+
+  async function loadTranscriptionText(t: Transcription, mode: 'raw' | 'readable') {
     setLoadingText(true);
     try {
-      const fileToFetch = t.readableFilename || t.filename;
+      const fileToFetch = mode === 'readable' && t.readableFilename ? t.readableFilename : t.filename;
       const res = await fetch(`/api/transcriptions-file?file=${encodeURIComponent(fileToFetch)}`);
       if (res.ok) {
         const data = await res.json();
@@ -164,6 +170,17 @@ export default function TranscriptionsPage() {
     } finally {
       setLoadingText(false);
     }
+  }
+
+  function handleViewModeChange(t: Transcription, mode: 'raw' | 'readable') {
+    setViewMode(mode);
+    loadTranscriptionText(t, mode);
+  }
+
+  function tabClass(active: boolean): string {
+    return active
+      ? 'text-xs px-3 py-1 rounded transition-colors bg-[#22c55e]/20 border border-[#22c55e]/50 text-[#22c55e]'
+      : 'text-xs px-3 py-1 rounded transition-colors bg-[#0d0d0f] border border-[#27272a] text-[#888888] hover:border-[#22c55e]/50 hover:text-[#22c55e]';
   }
 
   function renderMarkdown(text: string): string {
@@ -317,6 +334,12 @@ export default function TranscriptionsPage() {
                     </div>
 
                     <div className="flex items-center gap-2 flex-shrink-0">
+                      <button
+                        onClick={() => handleExpand(t)}
+                        className="text-xs px-3 py-1.5 bg-[#0d0d0f] border border-[#27272a] rounded hover:border-[#22c55e]/50 hover:text-[#22c55e] text-[#888888] transition-colors"
+                      >
+                        {expandedFile === t.filename ? 'Collapse' : 'View'}
+                      </button>
                       {t.readableFilename && (
                         <a
                           href={`/api/transcriptions-file?file=${encodeURIComponent(t.readableFilename)}&format=html`}
@@ -327,12 +350,6 @@ export default function TranscriptionsPage() {
                           📖 Readable
                         </a>
                       )}
-                      <button
-                        onClick={() => handleExpand(t)}
-                        className="text-xs px-3 py-1.5 bg-[#0d0d0f] border border-[#27272a] rounded hover:border-[#22c55e]/50 hover:text-[#22c55e] text-[#888888] transition-colors"
-                      >
-                        {expandedFile === t.filename ? 'Collapse' : 'View'}
-                      </button>
                       <button
                         onClick={() => handleDelete(t.filename)}
                         className="text-xs px-3 py-1.5 bg-[#0d0d0f] border border-[#27272a] rounded hover:border-red-500/50 hover:text-red-400 text-[#888888] transition-colors"
@@ -345,6 +362,22 @@ export default function TranscriptionsPage() {
 
                 {expandedFile === t.filename && (
                   <div className="border-t border-[#27272a] bg-[#0d0d0f] p-4">
+                    {t.readableFilename && (
+                      <div className="flex gap-1 mb-3">
+                        <button
+                          onClick={() => handleViewModeChange(t, 'raw')}
+                          className={tabClass(viewMode === 'raw')}
+                        >
+                          Transcript
+                        </button>
+                        <button
+                          onClick={() => handleViewModeChange(t, 'readable')}
+                          className={tabClass(viewMode === 'readable')}
+                        >
+                          Readable
+                        </button>
+                      </div>
+                    )}
                     {loadingText ? (
                       <div className="flex items-center justify-center py-4">
                         <div className="animate-spin w-5 h-5 border-2 border-[#22c55e] border-t-transparent rounded-full"></div>
@@ -352,7 +385,7 @@ export default function TranscriptionsPage() {
                       </div>
                     ) : (
                       <>
-                        {t.readableFilename ? (
+                        {viewMode === 'readable' && t.readableFilename ? (
                           <div
                             className="text-sm text-[#e8e8e8] leading-relaxed max-h-96 overflow-y-auto prose-invert"
                             dangerouslySetInnerHTML={{ __html: renderMarkdown(fullText) }}
