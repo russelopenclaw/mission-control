@@ -56,8 +56,11 @@ export default function TranscriptionsPage() {
   const [loadingText, setLoadingText] = useState(false);
   const [viewMode, setViewMode] = useState<'raw' | 'readable'>('raw');
   const [videoUrl, setVideoUrl] = useState('');
+  const [audioUrl, setAudioUrl] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [submittingAudio, setSubmittingAudio] = useState(false);
   const [submitMessage, setSubmitMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [audioMessage, setAudioMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
     fetchTranscriptions();
@@ -97,7 +100,6 @@ export default function TranscriptionsPage() {
       if (res.ok) {
         setSubmitMessage({ type: 'success', text: data.message || 'Video transcribed successfully' });
         setVideoUrl('');
-        // Refresh the transcriptions list to show the new one
         await fetchTranscriptions();
       } else {
         setSubmitMessage({ type: 'error', text: data.error || data.details || 'Failed to transcribe video' });
@@ -106,6 +108,35 @@ export default function TranscriptionsPage() {
       setSubmitMessage({ type: 'error', text: 'Failed to process video URL' });
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function handleSubmitAudioUrl(e: React.FormEvent) {
+    e.preventDefault();
+    if (!audioUrl.trim()) return;
+
+    setSubmittingAudio(true);
+    setAudioMessage(null);
+
+    try {
+      const res = await fetch('/api/transcriptions-queue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: audioUrl.trim(), type: 'audio' }),
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        setAudioMessage({ type: 'success', text: data.message || 'Audio transcribed successfully' });
+        setAudioUrl('');
+        await fetchTranscriptions();
+      } else {
+        setAudioMessage({ type: 'error', text: data.error || data.details || 'Failed to transcribe audio' });
+      }
+    } catch {
+      setAudioMessage({ type: 'error', text: 'Failed to process audio URL' });
+    } finally {
+      setSubmittingAudio(false);
     }
   }
 
@@ -226,7 +257,7 @@ export default function TranscriptionsPage() {
         </div>
 
         {/* Add Video URL Section */}
-        <div className="bg-[#151518] border border-[#27272a] rounded-lg p-4 mb-6">
+        <div className="bg-[#151518] border border-[#27272a] rounded-lg p-4 mb-4">
           <h2 className="text-sm font-medium text-[#a1a1a1] mb-3 flex items-center gap-2">
             <span>🔗</span> Transcribe a Video
           </h2>
@@ -264,6 +295,48 @@ export default function TranscriptionsPage() {
           )}
         </div>
 
+        {/* Add Audio URL Section */}
+        <div className="bg-[#151518] border border-[#27272a] rounded-lg p-4 mb-6">
+          <h2 className="text-sm font-medium text-[#a1a1a1] mb-3 flex items-center gap-2">
+            <span>🎵</span> Transcribe an Audio File
+          </h2>
+          <form onSubmit={handleSubmitAudioUrl} className="flex gap-2">
+            <input
+              type="url"
+              value={audioUrl}
+              onChange={(e) => {
+                setAudioUrl(e.target.value);
+                setAudioMessage(null);
+              }}
+              placeholder="Paste Google Drive link or direct MP3 URL..."
+              className="flex-1 bg-[#0d0d0f] border border-[#27272a] rounded-lg px-3 py-2 text-sm text-[#e8e8e8] placeholder-[#525252] focus:outline-none focus:border-[#3b82f6]/50 transition-colors"
+              disabled={submittingAudio}
+            />
+            <button
+              type="submit"
+              disabled={submittingAudio || !audioUrl.trim()}
+              className="px-4 py-2 bg-[#3b82f6]/10 border border-[#3b82f6]/30 rounded-lg text-sm text-[#3b82f6] hover:bg-[#3b82f6]/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-2 whitespace-nowrap"
+            >
+              {submittingAudio ? (
+                <>
+                  <div className="animate-spin w-3 h-3 border border-[#3b82f6] border-t-transparent rounded-full"></div>
+                  Transcribing...
+                </>
+              ) : (
+                <>Transcribe</>
+              )}
+            </button>
+          </form>
+          <p className="text-xs text-[#525252] mt-2">
+            Supports Google Drive links (make file publicly accessible), direct MP3/WAV/M4A/OGG/FLAC URLs
+          </p>
+          {audioMessage && (
+            <p className={`text-xs mt-1 ${audioMessage.type === 'success' ? 'text-[#22c55e]' : 'text-red-400'}`}>
+              {audioMessage.type === 'success' ? '✓' : '✕'} {audioMessage.text}
+            </p>
+          )}
+        </div>
+
         {error && (
           <div className="mb-4 p-3 bg-red-900/30 border border-red-800/50 rounded-lg text-red-300 text-sm">
             {error}
@@ -280,7 +353,7 @@ export default function TranscriptionsPage() {
             <div className="text-4xl mb-4">🎙️</div>
             <h2 className="text-lg font-medium text-[#e8e8e8] mb-2">No transcriptions yet</h2>
             <p className="text-sm text-[#888888] max-w-md mx-auto">
-              Paste a YouTube or Vimeo URL above to transcribe a video.
+              Paste a YouTube/Vimeo URL to transcribe a video, or a Google Drive/direct audio link to transcribe an audio file.
               Transcriptions will appear here once processed.
             </p>
           </div>
