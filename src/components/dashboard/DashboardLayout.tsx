@@ -18,6 +18,7 @@ const pageTitles: Record<string, string> = {
   '/plex': 'Plex',
   '/jobs': 'Jobs',
   '/transcriptions': 'Transcriptions',
+  '/tasks': 'Kanban',
 };
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {

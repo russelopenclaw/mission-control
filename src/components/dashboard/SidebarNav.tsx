@@ -37,6 +37,7 @@ const defaultNavItems: NavItem[] = [
   { href: '/plex', label: 'Plex', icon: '🎬' },
   { href: '/jobs', label: 'Jobs', icon: '💼' },
   { href: '/transcriptions', label: 'Transcriptions', icon: '🎙️' },
+  { href: '/tasks', label: 'Kanban', icon: '📋' },
 ];
 
 const STORAGE_KEY = 'mission-control-nav-order';
