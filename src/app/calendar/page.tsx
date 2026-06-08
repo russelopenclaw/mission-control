@@ -4,7 +4,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import FiveDayView from '@/components/calendar/FiveDayView';
 import MonthlyView from '@/components/calendar/MonthlyView';
-import LiveActivitySidebar from '@/components/widgets/LiveActivitySidebar';
 import EventModal from '@/components/calendar/EventModal';
 
 interface AgentStatus {
@@ -21,25 +20,11 @@ interface CronJob {
 }
 
 export default function CalendarPage() {
-  const [agents, setAgents] = useState<{ [key: string]: AgentStatus }>({});
   const [isLoading, setIsLoading] = useState(true);
   const [showEventModal, setShowEventModal] = useState(false);
   const [cronJobs, setCronJobs] = useState<CronJob[]>([]);
 
-  // Fetch agent status
-  const fetchAgentStatus = useCallback(async () => {
-    try {
-      const statusRes = await fetch('/api/status');
-      const statusData = await statusRes.json();
-      setAgents(statusData.agents || {});
-      setIsLoading(false);
-    } catch (error) {
-      console.error('Failed to fetch agent status:', error);
-      setIsLoading(false);
-    }
-  }, []);
-
-  // Fetch cron jobs
+  // Fetch cron jobs (agent status is now shown via AgentStatusPill in the sidebar layout)
   const fetchCronJobs = useCallback(async () => {
     try {
       const res = await fetch('/api/cron');
@@ -51,16 +36,12 @@ export default function CalendarPage() {
   }, []);
 
   useEffect(() => {
-    fetchAgentStatus();
+    setIsLoading(false);
     fetchCronJobs();
-
-    // Poll for updates every 30 seconds
-    const interval = setInterval(() => {
-      fetchAgentStatus();
-      fetchCronJobs();
-    }, 30000);
+    // Poll for cron job updates every 30 seconds
+    const interval = setInterval(fetchCronJobs, 30000);
     return () => clearInterval(interval);
-  }, [fetchAgentStatus, fetchCronJobs]);
+  }, [fetchCronJobs]);
 
   const handleAddEvent = async (eventData: any) => {
     try {
@@ -123,7 +104,7 @@ export default function CalendarPage() {
     <DashboardLayout>
       <div className="relative">
         {/* Main Calendar Content */}
-        <div className="lg:pr-[340px]">
+        <div>
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-xl font-semibold text-white">Calendar</h1>
             <button
@@ -181,11 +162,6 @@ export default function CalendarPage() {
               </div>
             </section>
           </div>
-        </div>
-
-        {/* Live Activity Sidebar - Desktop only */}
-        <div className="fixed top-0 right-0 h-screen w-[340px] z-40 hidden lg:block">
-          <LiveActivitySidebar agents={agents} />
         </div>
       </div>
 

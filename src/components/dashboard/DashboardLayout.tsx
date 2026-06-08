@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import SidebarNav from './SidebarNav';
+import AgentStatusPill from '@/components/widgets/AgentStatusPill';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -71,18 +72,15 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         
         <SidebarNav collapsed={sidebarCollapsed} />
         
-        {/* Status indicator */}
+        {/* Agent status pill (replaces the old "Live: PostgreSQL" indicator and the deprecated LiveActivitySidebar) */}
         {!sidebarCollapsed && (
           <div className="shrink-0 p-3 mx-2 mb-2 bg-[#0d0d0f] rounded-lg border border-[#27272a]">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-[#22c55e] animate-pulse"></div>
-              <span className="text-xs text-[#71717a]">Live: PostgreSQL</span>
-            </div>
+            <AgentStatusPill />
           </div>
         )}
         {sidebarCollapsed && (
           <div className="shrink-0 flex justify-center pb-4">
-            <div className="w-2 h-2 rounded-full bg-[#22c55e] animate-pulse" title="Live"></div>
+            <div className="w-2 h-2 rounded-full bg-[#22c55e] animate-pulse" title="Agent online" />
           </div>
         )}
       </aside>

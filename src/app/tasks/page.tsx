@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import KanbanBoard from '@/components/kanban/KanbanBoard';
-import LiveActivitySidebar from '@/components/widgets/LiveActivitySidebar';
 
 interface Task {
   id: string;
@@ -35,7 +34,6 @@ export default function TasksPage() {
   const [showModal, setShowModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isAddingTask, setIsAddingTask] = useState(false);
-  const [showMobileSidebar, setShowMobileSidebar] = useState(false);
 
   // Fetch tasks and agent status
   const fetchData = useCallback(async () => {
@@ -133,7 +131,7 @@ export default function TasksPage() {
     <DashboardLayout>
       <div className="relative">
         {/* Main Kanban Board */}
-        <div className="lg:pr-[340px]">
+        <div>
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
             <h1 className="text-xl font-semibold text-white">Tasks</h1>
             <button
@@ -159,32 +157,7 @@ export default function TasksPage() {
           )}
         </div>
 
-        {/* Mobile Sidebar Overlay */}
-        {showMobileSidebar && (
-          <div 
-            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-            onClick={() => setShowMobileSidebar(false)}
-          />
-        )}
-
-        {/* Live Activity Sidebar - Slide-in on Mobile, Fixed on Desktop */}
-        <div className={`fixed top-[60px] right-0 h-[calc(100vh-60px)] w-[340px] z-50 transition-transform duration-300 ${
-          showMobileSidebar ? 'translate-x-0' : 'translate-x-full'
-        } lg:translate-x-0 lg:block`}>
-          <LiveActivitySidebar agents={agents} />
         </div>
-
-        {/* Mobile Sidebar Toggle */}
-        <button
-          onClick={() => setShowMobileSidebar(!showMobileSidebar)}
-          className="fixed bottom-4 right-4 lg:hidden z-50 bg-[#1a1a1f] border border-[#27272a] hover:bg-[#27272a] text-[#e8e8e8] p-3 rounded-full shadow-lg min-w-[44px] min-h-[44px] flex items-center justify-center"
-          aria-label="Toggle activity panel"
-        >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-          </svg>
-        </button>
-      </div>
 
       {/* Task Details Modal */}
       {showModal && selectedTask && (
