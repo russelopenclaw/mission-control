@@ -12,6 +12,10 @@ interface Task {
   priority: 'low' | 'medium' | 'high';
   createdAt: string;
   description?: string;
+  epic?: string | null;
+  parentTaskId?: string | null;
+  deliverables?: string | null;
+  validationCriteria?: string[] | null;
 }
 
 interface AgentStatus {

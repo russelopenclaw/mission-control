@@ -35,6 +35,10 @@ export async function GET(request: NextRequest) {
       assignee: row.assignee,
       priority: row.priority,
       description: row.description,
+      epic: row.epic || null,
+      parentTaskId: row.parent_task_id || null,
+      deliverables: row.deliverables || null,
+      validationCriteria: row.validation_criteria || null,
       createdAt: row.created_at,
       startedAt: row.started_at,
       completedAt: row.completed_at,
@@ -68,8 +72,8 @@ export async function POST(request: NextRequest) {
     const result = await query(
       `INSERT INTO tasks (
         id, title, column_name, assignee, priority, description,
-        linked_subagent, created_at, started_at, updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+        epic, parent_task_id, linked_subagent, created_at, started_at, updated_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())
       RETURNING *`,
       [
         body.id || `task-${Date.now()}`,
@@ -78,6 +82,8 @@ export async function POST(request: NextRequest) {
         body.assignee || 'alfred',
         body.priority || 'medium',
         body.description || null,
+        body.epic || null,
+        body.parentTaskId || null,
         body.linkedSubagent || null,
         new Date().toISOString(),
         body.startedAt || null,
@@ -117,6 +123,7 @@ export async function PATCH(request: NextRequest) {
       startedAt: 'started_at',
       completedAt: 'completed_at',
       linkedSubagent: 'linked_subagent',
+      parentTaskId: 'parent_task_id',
     };
     
     for (const [field, value] of Object.entries(updates)) {

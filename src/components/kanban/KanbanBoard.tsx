@@ -10,6 +10,10 @@ interface Task {
   priority: 'low' | 'medium' | 'high';
   createdAt: string;
   description?: string;
+  epic?: string | null;
+  parentTaskId?: string | null;
+  deliverables?: string | null;
+  validationCriteria?: string[] | null;
 }
 
 interface KanbanBoardProps {
@@ -142,6 +146,15 @@ function TaskCard({ task, onMoveTask, onTaskClick, allColumns }: TaskCardProps) 
       <h4 className="font-medium text-[#e8e8e8] text-sm mb-2 line-clamp-2">
         {task.title}
       </h4>
+
+      {/* Epic Badge */}
+      {task.epic && (
+        <div className="mb-2">
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#5e6ad2]/20 text-[#a5b4fc] border border-[#5e6ad2]/30">
+            🎯 {task.epic}
+          </span>
+        </div>
+      )}
 
       {/* Metadata */}
       <div className="flex items-center gap-2 mb-2 text-xs">
