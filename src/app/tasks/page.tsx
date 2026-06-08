@@ -44,11 +44,29 @@ export default function TasksPage() {
         fetch('/api/tasks'),
         fetch('/api/status')
       ]);
-      
+
       const tasksData = await tasksRes.json();
       const statusData = await statusRes.json();
-      
-      setTasks(tasksData.tasks || []);
+
+      // Normalize column case: API returns lowercase ('in_progress'),
+      // KanbanBoard COLUMNS array uses uppercase ('IN_PROGRESS').
+      // Map the API value to the frontend's expected case so the filter
+      // `tasks.filter(t => t.column === 'IN_PROGRESS')` actually matches.
+      const columnMap: Record<string, string> = {
+        'backlog': 'BACKLOG',
+        'ready': 'READY',
+        'in_progress': 'IN_PROGRESS',
+        'in-progress': 'IN_PROGRESS',
+        'validation': 'VALIDATION',
+        'done': 'DONE',
+        'blocked': 'BLOCKED',
+        'archived': 'DONE', // map archived to Done column visually
+      };
+      const normalized = (tasksData.tasks || []).map((t: any) => ({
+        ...t,
+        column: columnMap[t.column] || t.column,
+      }));
+      setTasks(normalized);
       setAgents(statusData.agents || {});
       setIsLoading(false);
     } catch (error) {
@@ -67,16 +85,21 @@ export default function TasksPage() {
 
   const handleMoveTask = async (taskId: string, newColumn: 'BACKLOG' | 'READY' | 'IN_PROGRESS' | 'VALIDATION' | 'DONE' | 'BLOCKED') => {
     try {
+      // Frontend uses UPPERCASE column ids (e.g. 'IN_PROGRESS').
+      // API expects lowercase with underscore (e.g. 'in_progress').
+      const apiColumn = newColumn.toLowerCase();
       const response = await fetch('/api/tasks', {
-        method: 'PUT',
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: taskId, column: newColumn })
+        body: JSON.stringify({ id: taskId, column: apiColumn })
       });
-      
+
       if (response.ok) {
-        setTasks(prev => prev.map(t => 
+        setTasks(prev => prev.map(t =>
           t.id === taskId ? { ...t, column: newColumn } : t
         ));
+      } else {
+        console.error('Failed to move task: HTTP', response.status);
       }
     } catch (error) {
       console.error('Failed to move task:', error);
