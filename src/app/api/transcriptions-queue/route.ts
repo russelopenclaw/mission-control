@@ -49,23 +49,51 @@ async function downloadAudio(url: string, tmpDir: string): Promise<{ filePath: s
       throw new Error('Could not extract Google Drive file ID from URL. Use the "Share" link format: https://drive.google.com/file/d/FILE_ID/view');
     }
     const outputPath = path.join(tmpDir, `gdrive_${fileId.substring(0, 12)}`);
-    // Try gdown first (handles large files & virus scan warnings)
+    // Download without forcing extension — gdown preserves the original filename
+    // (e.g. "1On1-2026-06-04.m4a" not ".mp3"). Forcing .mp3 on m4a files causes
+    // Whisper to misidentify the format and return "No audio data".
     try {
-      execSync(`gdown "${url}" -O "${outputPath}.mp3" 2>&1`, { timeout: 300000, encoding: 'utf-8' });
+      // gdown with -O and no extension lets it use the Drive filename
+      execSync(`gdown "${url}" -O "${outputPath}" 2>&1`, { timeout: 300000, encoding: 'utf-8' });
       const files = await fs.readdir(tmpDir);
       const downloaded = files.find(f => f.startsWith('gdrive_'));
       if (downloaded) {
-        return { filePath: path.join(tmpDir, downloaded), originalName: downloaded };
+        // If no extension (gdown didn't add one), probe with ffprobe and rename
+        const filePath = path.join(tmpDir, downloaded);
+        if (!path.extname(downloaded)) {
+          try {
+            const probe = execSync(
+              `ffprobe -i "${filePath}" -show_entries format=format_name -v quiet -of csv=p=0 2>/dev/null`,
+              { encoding: 'utf-8', timeout: 10000 }
+            ).trim();
+            let ext = '.m4a'; // default for Apple recordings
+            if (probe.includes('mp3')) ext = '.mp3';
+            else if (probe.includes('wav')) ext = '.wav';
+            else if (probe.includes('ogg')) ext = '.ogg';
+            else if (probe.includes('flac')) ext = '.flac';
+            const newPath = filePath + ext;
+            await fs.rename(filePath, newPath);
+            return { filePath: newPath, originalName: path.basename(newPath) };
+          } catch {
+            // Can't probe — assume m4a (most common for meeting recordings)
+            const newPath = filePath + '.m4a';
+            await fs.rename(filePath, newPath);
+            return { filePath: newPath, originalName: path.basename(newPath) };
+          }
+        }
+        return { filePath, originalName: downloaded };
       }
     } catch {
       // gdown failed, try direct download
     }
     // Fallback: direct download via curl
     try {
-      execSync(`curl -L -o "${outputPath}.mp3" "https://drive.google.com/uc?export=download&id=${fileId}" 2>&1`, {
+      // Try to detect extension from URL or default to common formats
+      const ext = '.m4a'; // most meeting recordings are m4a (Apple Voice Memos, Zoom, etc.)
+      execSync(`curl -L -o "${outputPath}${ext}" "https://drive.google.com/uc?export=download&id=${fileId}" 2>&1`, {
         timeout: 300000, encoding: 'utf-8'
       });
-      return { filePath: `${outputPath}.mp3`, originalName: `gdrive_${fileId.substring(0, 12)}.mp3` };
+      return { filePath: `${outputPath}${ext}`, originalName: `gdrive_${fileId.substring(0, 12)}${ext}` };
     } catch (e) {
       throw new Error('Failed to download from Google Drive. The file may be too large or access-restricted. Try making the file publicly accessible.');
     }
