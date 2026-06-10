@@ -144,7 +144,7 @@ function TaskCard({ task, onMoveTask, onTaskClick, allColumns }: TaskCardProps) 
     >
       {/* ID + Title */}
       <div className="flex items-start gap-1.5 mb-2">
-        <span className="text-[10px] text-[#5e6ad2] font-mono shrink-0 leading-5 bg-[#5e6ad2]/10 px-1 rounded">
+        <span className="text-[11px] text-[#5e6ad2] font-mono font-semibold shrink-0 leading-5 bg-[#5e6ad2]/10 px-1.5 py-0.5 rounded">
           {task.id}
         </span>
         <h4 className="font-medium text-[#e8e8e8] text-sm line-clamp-2">

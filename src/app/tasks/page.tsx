@@ -170,7 +170,7 @@ export default function TasksPage() {
             {/* Header: ID + Title + Close */}
             <div className="flex items-start justify-between gap-3 mb-5">
               <div className="flex items-start gap-2 min-w-0">
-                <span className="text-xs text-[#5e6ad2] font-mono bg-[#5e6ad2]/10 px-1.5 py-0.5 rounded shrink-0 mt-0.5">
+                <span className="text-sm text-[#5e6ad2] font-mono font-bold bg-[#5e6ad2]/10 px-2 py-0.5 rounded shrink-0 mt-0.5">
                   {selectedTask.id}
                 </span>
                 <h2 className="text-lg font-semibold text-white leading-snug">{selectedTask.title}</h2>
