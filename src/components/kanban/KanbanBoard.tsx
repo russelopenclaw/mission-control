@@ -142,10 +142,15 @@ function TaskCard({ task, onMoveTask, onTaskClick, allColumns }: TaskCardProps) 
       className="bg-[#0d0d0f] border border-[#27272a] rounded-md p-3 hover:border-[#3f3f46] transition-colors cursor-pointer"
       onClick={() => onTaskClick(task)}
     >
-      {/* Title */}
-      <h4 className="font-medium text-[#e8e8e8] text-sm mb-2 line-clamp-2">
-        {task.title}
-      </h4>
+      {/* ID + Title */}
+      <div className="flex items-start gap-1.5 mb-2">
+        <span className="text-[10px] text-[#5e6ad2] font-mono shrink-0 leading-5 bg-[#5e6ad2]/10 px-1 rounded">
+          {task.id}
+        </span>
+        <h4 className="font-medium text-[#e8e8e8] text-sm line-clamp-2">
+          {task.title}
+        </h4>
+      </div>
 
       {/* Epic Badge */}
       {task.epic && (

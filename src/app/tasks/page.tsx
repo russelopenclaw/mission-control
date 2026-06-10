@@ -166,31 +166,36 @@ export default function TasksPage() {
       {/* Task Details Modal */}
       {showModal && selectedTask && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-[#151518] border border-[#27272a] rounded-lg max-w-md w-full p-4 sm:p-6 my-8">
-            <div className="flex items-start justify-between mb-4">
-              <h2 className="text-lg font-semibold text-white">{selectedTask.title}</h2>
+          <div className="bg-[#151518] border border-[#27272a] rounded-lg max-w-2xl w-full p-4 sm:p-6 my-8">
+            {/* Header: ID + Title + Close */}
+            <div className="flex items-start justify-between gap-3 mb-5">
+              <div className="flex items-start gap-2 min-w-0">
+                <span className="text-xs text-[#5e6ad2] font-mono bg-[#5e6ad2]/10 px-1.5 py-0.5 rounded shrink-0 mt-0.5">
+                  {selectedTask.id}
+                </span>
+                <h2 className="text-lg font-semibold text-white leading-snug">{selectedTask.title}</h2>
+              </div>
               <button
                 onClick={() => setShowModal(false)}
-                className="text-[#888888] hover:text-white transition-colors"
+                className="text-[#888888] hover:text-white transition-colors shrink-0"
               >
                 ✕
               </button>
             </div>
             
-            <div className="space-y-3">
+            {/* Sidebar-style metadata row */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5 pb-4 border-b border-[#27272a]">
               <div>
-                <label className="text-xs text-[#888888] uppercase tracking-wide">Status</label>
-                <p className="text-sm text-[#e8e8e8] capitalize">{selectedTask.column.replace('-', ' ')}</p>
+                <label className="text-[10px] text-[#71717a] uppercase tracking-wide block">Status</label>
+                <p className="text-sm text-[#e8e8e8] capitalize mt-0.5">{selectedTask.column.replace('-', ' ')}</p>
               </div>
-              
               <div>
-                <label className="text-xs text-[#888888] uppercase tracking-wide">Assignee</label>
-                <p className="text-sm text-[#e8e8e8] capitalize">{selectedTask.assignee}</p>
+                <label className="text-[10px] text-[#71717a] uppercase tracking-wide block">Assignee</label>
+                <p className="text-sm text-[#e8e8e8] capitalize mt-0.5">{selectedTask.assignee}</p>
               </div>
-              
               <div>
-                <label className="text-xs text-[#888888] uppercase tracking-wide">Priority</label>
-                <p className={`text-sm capitalize ${
+                <label className="text-[10px] text-[#71717a] uppercase tracking-wide block">Priority</label>
+                <p className={`text-sm capitalize mt-0.5 ${
                   selectedTask.priority === 'high' ? 'text-[#f87171]' :
                   selectedTask.priority === 'medium' ? 'text-[#fbbf24]' :
                   'text-[#86efac]'
@@ -198,21 +203,71 @@ export default function TasksPage() {
                   {selectedTask.priority}
                 </p>
               </div>
-              
-              {selectedTask.description && (
-                <div>
-                  <label className="text-xs text-[#888888] uppercase tracking-wide">Description</label>
-                  <p className="text-sm text-[#a1a1a1] mt-1">{selectedTask.description}</p>
-                </div>
-              )}
-              
               <div>
-                <label className="text-xs text-[#888888] uppercase tracking-wide">Created</label>
-                <p className="text-sm text-[#a1a1a1]">
-                  {new Date(selectedTask.createdAt).toLocaleString()}
-                </p>
+                <label className="text-[10px] text-[#71717a] uppercase tracking-wide block">Created</label>
+                <p className="text-sm text-[#a1a1a1] mt-0.5">{new Date(selectedTask.createdAt).toLocaleDateString()}</p>
               </div>
             </div>
+
+            {/* Epic + Parent */}
+            {(selectedTask.epic || selectedTask.parentTaskId) && (
+              <div className="flex items-center gap-2 mb-4">
+                {selectedTask.epic && (
+                  <span className="text-[11px] px-2 py-0.5 rounded bg-[#5e6ad2]/20 text-[#a5b4fc] border border-[#5e6ad2]/30">
+                    🎯 {selectedTask.epic}
+                  </span>
+                )}
+                {selectedTask.parentTaskId && (
+                  <span className="text-[11px] px-2 py-0.5 rounded bg-[#27272a] text-[#888888] border border-[#3f3f46]">
+                    ↑ {selectedTask.parentTaskId}
+                  </span>
+                )}
+              </div>
+            )}
+
+            {/* Description (What & Why) */}
+            {selectedTask.description && (
+              <div className="mb-4">
+                <label className="text-xs text-[#888888] uppercase tracking-wide block mb-1">Description</label>
+                <div className="text-sm text-[#d4d4d8] whitespace-pre-line bg-[#0d0d0f] rounded-md p-3 border border-[#27272a]">
+                  {selectedTask.description}
+                </div>
+              </div>
+            )}
+
+            {/* Deliverables */}
+            {selectedTask.deliverables && (
+              <div className="mb-4">
+                <label className="text-xs text-[#888888] uppercase tracking-wide block mb-1">Deliverables</label>
+                <ul className="text-sm text-[#d4d4d8] space-y-1 bg-[#0d0d0f] rounded-md p-3 border border-[#27272a]">
+                  {selectedTask.deliverables.split('\n').map((line, i) => {
+                    const cleaned = line.replace(/^\d+\.\s*/, '').trim();
+                    if (!cleaned) return null;
+                    return (
+                      <li key={i} className="flex items-start gap-2">
+                        <span className="text-[#5e6ad2] mt-0.5 shrink-0">☐</span>
+                        <span>{cleaned}</span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
+
+            {/* Validation Criteria (Acceptance Criteria) */}
+            {selectedTask.validationCriteria && selectedTask.validationCriteria.length > 0 && (
+              <div className="mb-4">
+                <label className="text-xs text-[#888888] uppercase tracking-wide block mb-1">Acceptance Criteria</label>
+                <ul className="text-sm text-[#d4d4d8] space-y-1 bg-[#0d0d0f] rounded-md p-3 border border-[#27272a]">
+                  {selectedTask.validationCriteria.map((criterion, i) => (
+                    <li key={i} className="flex items-start gap-2">
+                      <span className="text-[#22c55e] mt-0.5 shrink-0">✓</span>
+                      <span>{criterion}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
             <div className="mt-6 flex justify-end">
               <button
