@@ -7,7 +7,7 @@ import KanbanBoard from '@/components/kanban/KanbanBoard';
 interface Task {
   id: string;
   title: string;
-  column: 'BACKLOG' | 'READY' | 'IN_PROGRESS' | 'VALIDATION' | 'DONE' | 'BLOCKED';
+  column: string;
   assignee: 'kevin' | 'alfred' | 'jeeves' | string;
   priority: 'low' | 'medium' | 'high';
   createdAt: string;
@@ -16,6 +16,7 @@ interface Task {
   parentTaskId?: string | null;
   deliverables?: string | null;
   validationCriteria?: string[] | null;
+  sortOrder?: number;
 }
 
 interface AgentStatus {
@@ -85,7 +86,7 @@ export default function TasksPage() {
     return () => clearInterval(interval);
   }, [fetchData]);
 
-  const handleMoveTask = async (taskId: string, newColumn: 'BACKLOG' | 'READY' | 'IN_PROGRESS' | 'VALIDATION' | 'DONE' | 'BLOCKED') => {
+  const handleMoveTask = async (taskId: string, newColumn: string) => {
     try {
       // Frontend uses UPPERCASE column ids (e.g. 'IN_PROGRESS').
       // API expects lowercase with underscore (e.g. 'in_progress').
@@ -105,6 +106,34 @@ export default function TasksPage() {
       }
     } catch (error) {
       console.error('Failed to move task:', error);
+    }
+  };
+
+  const handleReorder = async (orders: { id: string; column: string; sortOrder: number }[]) => {
+    // Optimistic update: immediately update local state
+    const orderMap = new Map(orders.map(o => [o.id, o]));
+    setTasks(prev => prev.map(t => {
+      const order = orderMap.get(t.id);
+      if (order) {
+        return { ...t, column: order.column, sortOrder: order.sortOrder };
+      }
+      return t;
+    }));
+
+    try {
+      const response = await fetch('/api/tasks', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orders })
+      });
+
+      if (!response.ok) {
+        console.error('Failed to reorder tasks: HTTP', response.status);
+        fetchData(); // Refetch on failure
+      }
+    } catch (error) {
+      console.error('Failed to reorder tasks:', error);
+      fetchData(); // Refetch on failure
     }
   };
 
@@ -155,6 +184,7 @@ export default function TasksPage() {
               <KanbanBoard
                 tasks={tasks}
                 onMoveTask={handleMoveTask}
+                onReorder={handleReorder}
                 onTaskClick={handleTaskClick}
               />
             </div>

@@ -39,6 +39,7 @@ export async function authMiddleware(request: NextRequest) {
     pathname === '/login' || 
     pathname.startsWith('/api/auth') ||
     pathname === '/api/tasks' ||
+    pathname.startsWith('/api/tasks/') ||
     pathname === '/api/status' ||
     pathname.startsWith('/api/status/') ||
     pathname === '/api/subagents' ||

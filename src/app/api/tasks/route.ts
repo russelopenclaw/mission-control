@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
       sql += ' WHERE column_name = $1';
     }
     
-    sql += ' ORDER BY created_at DESC';
+    sql += ' ORDER BY sort_order ASC, created_at DESC';
     
     if (limit) {
       params.push(parseInt(limit));
@@ -39,6 +39,7 @@ export async function GET(request: NextRequest) {
       parentTaskId: row.parent_task_id || null,
       deliverables: row.deliverables || null,
       validationCriteria: row.validation_criteria || null,
+      sortOrder: row.sort_order ?? 0,
       createdAt: row.created_at,
       startedAt: row.started_at,
       completedAt: row.completed_at,
@@ -107,6 +108,18 @@ export async function POST(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json();
+
+    // Batch reorder: { orders: [{ id, column, sortOrder }, ...] }
+    if (body.orders && Array.isArray(body.orders)) {
+      for (const item of body.orders) {
+        await query(
+          `UPDATE tasks SET sort_order = $1, column_name = $2, updated_at = NOW() WHERE id = $3`,
+          [item.sortOrder, item.column.toLowerCase(), item.id]
+        );
+      }
+      return NextResponse.json({ success: true, updated: body.orders.length });
+    }
+
     const { id, ...updates } = body;
     
     if (!id) {
@@ -127,12 +140,14 @@ export async function PATCH(request: NextRequest) {
       completedAt: 'completed_at',
       linkedSubagent: 'linked_subagent',
       parentTaskId: 'parent_task_id',
+      sortOrder: 'sort_order',
     };
     
     for (const [field, value] of Object.entries(updates)) {
       const dbField = fieldMap[field] || field;
       setClauses.push(`${dbField} = $${paramIndex}`);
-      values.push(value);
+      // Normalize column values to lowercase for DB constraint
+      values.push(field === 'column' ? String(value).toLowerCase() : value);
       paramIndex++;
     }
     
